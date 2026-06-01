@@ -5,21 +5,21 @@ import (
 	"strings"
 )
 
-// MavenError 表示 Maven 命令执行失败的错误
-// 包含命令信息和 stderr 输出，便于诊断问题
+// MavenError represents an error from a failed Maven command execution
+// It contains command information and stderr output for easier diagnosis
 type MavenError struct {
-	Command   string   // 执行的完整命令（如 "mvn clean install"）
-	Args      []string // 命令参数
-	Stderr    string   // Maven 的 stderr 输出
-	ExitCode  int      // 进程退出码（如果可用）
-	Inner     error    // 原始错误
+	Command   string   // The full command executed (e.g. "mvn clean install")
+	Args      []string // Command arguments
+	Stderr    string   // Maven's stderr output
+	ExitCode  int      // Process exit code (if available)
+	Inner     error    // The original error
 }
 
 func (e *MavenError) Error() string {
 	var parts []string
 	parts = append(parts, fmt.Sprintf("maven command failed: %s %s", e.Command, strings.Join(e.Args, " ")))
 	if e.Stderr != "" {
-		// 只取 stderr 的前 500 字符，避免错误信息过长
+		// Only take the first 500 characters of stderr to avoid overly long error messages
 		stderr := e.Stderr
 		if len(stderr) > 500 {
 			stderr = stderr[:500] + "... (truncated)"
@@ -36,7 +36,7 @@ func (e *MavenError) Unwrap() error {
 	return e.Inner
 }
 
-// NewMavenError 创建一个新的 MavenError
+// NewMavenError creates a new MavenError
 func NewMavenError(command string, args []string, stderr string, inner error) *MavenError {
 	return &MavenError{
 		Command: command,

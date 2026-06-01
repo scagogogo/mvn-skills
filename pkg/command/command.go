@@ -5,10 +5,10 @@ import (
 	"os/exec"
 )
 
-// Exec 执行mvn命令，比较底层的API
+// Exec executes a Maven command; this is a low-level API
 func Exec(options *Options) error {
 
-	// 如果没有设置可执行文件的位置的话，默认是从PATH中获取执行
+	// If the executable path is not set, default to finding it from PATH
 	if options.Executable == "" {
 		options.Executable = "mvn"
 	}
@@ -29,8 +29,8 @@ func Exec(options *Options) error {
 	return command.Run()
 }
 
-// ExecForStdout 执行 Maven 命令并返回标准输出
-// 当命令执行失败时，返回包含 stderr 信息的 MavenError
+// ExecForStdout executes a Maven command and returns the standard output
+// When the command fails, it returns a MavenError containing stderr information
 func ExecForStdout(executable string, args ...string) (string, error) {
 	if executable == "" {
 		executable = "mvn"

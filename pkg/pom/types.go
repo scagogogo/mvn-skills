@@ -2,7 +2,7 @@ package pom
 
 import "encoding/xml"
 
-// Project 表示 Maven POM 文件的根结构
+// Project represents the root structure of a Maven POM file
 type Project struct {
 	XMLName          xml.Name     `xml:"project"`
 	ModelVersion     string       `xml:"modelVersion"`
@@ -28,14 +28,14 @@ type Project struct {
 	IssueManagement  *IssueManagement `xml:"issueManagement"`
 	Organization     *Organization `xml:"organization"`
 	Licenses         *Licenses    `xml:"licenses"`
-	Developers       *Developers `xml:"developers"`
+	Developers       *Developers  `xml:"developers"`
 	Contributors     *Contributors `xml:"contributors"`
 	MailingLists     *MailingLists `xml:"mailingLists"`
 	Prerequisites    *Prerequisites `xml:"prerequisites"`
 	DistributionManagement *DistributionManagement `xml:"distributionManagement"`
 }
 
-// Parent 表示 POM 的父项目信息
+// Parent represents the parent project information in a POM
 type Parent struct {
 	GroupId      string `xml:"groupId"`
 	ArtifactId   string `xml:"artifactId"`
@@ -43,18 +43,18 @@ type Parent struct {
 	RelativePath string `xml:"relativePath"`
 }
 
-// Properties 表示 Maven 属性
+// Properties represents Maven properties
 type Properties struct {
 	Entries []PropertyEntry
 }
 
-// PropertyEntry 表示单个 Maven 属性
+// PropertyEntry represents a single Maven property
 type PropertyEntry struct {
 	Key   string
 	Value string
 }
 
-// Dependency 表示 Maven 依赖
+// Dependency represents a Maven dependency
 type Dependency struct {
 	GroupId    string `xml:"groupId"`
 	ArtifactId string `xml:"artifactId"`
@@ -66,33 +66,33 @@ type Dependency struct {
 	Exclusions *Exclusions `xml:"exclusions"`
 }
 
-// Exclusions 表示依赖排除列表
+// Exclusions represents the dependency exclusion list
 type Exclusions struct {
 	Exclusion []Exclusion `xml:"exclusion"`
 }
 
-// Exclusion 表示单个排除项
+// Exclusion represents a single exclusion entry
 type Exclusion struct {
 	GroupId    string `xml:"groupId"`
 	ArtifactId string `xml:"artifactId"`
 }
 
-// Dependencies 表示依赖列表
+// Dependencies represents the dependency list
 type Dependencies struct {
 	Dependency []Dependency `xml:"dependency"`
 }
 
-// DependencyManagement 表示依赖管理
+// DependencyManagement represents dependency management
 type DependencyManagement struct {
 	Dependencies *Dependencies `xml:"dependencies"`
 }
 
-// Modules 表示子模块列表
+// Modules represents the submodule list
 type Modules struct {
 	Module []string `xml:"module"`
 }
 
-// Build 表示构建配置
+// Build represents the build configuration
 type Build struct {
 	DefaultGoal    string       `xml:"defaultGoal"`
 	SourceDirectory string      `xml:"sourceDirectory"`
@@ -108,7 +108,7 @@ type Build struct {
 	TestOutputDirectory string  `xml:"testOutputDirectory"`
 }
 
-// Resource 表示资源文件配置
+// Resource represents the resource file configuration
 type Resource struct {
 	Directory    string   `xml:"directory"`
 	TargetPath   string   `xml:"targetPath"`
@@ -117,22 +117,22 @@ type Resource struct {
 	Excludes     *Excludes `xml:"excludes"`
 }
 
-// Resources 表示资源列表
+// Resources represents the resource list
 type Resources struct {
 	Resource []Resource `xml:"resource"`
 }
 
-// Includes 表示包含模式
+// Includes represents the include patterns
 type Includes struct {
 	Include []string `xml:"include"`
 }
 
-// Excludes 表示排除模式
+// Excludes represents the exclude patterns
 type Excludes struct {
 	Exclude []string `xml:"exclude"`
 }
 
-// Plugin 表示 Maven 插件
+// Plugin represents a Maven plugin
 type Plugin struct {
 	GroupId      string     `xml:"groupId"`
 	ArtifactId  string     `xml:"artifactId"`
@@ -144,19 +144,19 @@ type Plugin struct {
 	Dependencies *Dependencies `xml:"dependencies"`
 }
 
-// Configuration 表示插件配置（通用 XML 结构）
+// Configuration represents the plugin configuration (generic XML structure)
 type Configuration struct {
 	Elements []ConfigElement
 }
 
-// ConfigElement 表示配置元素
+// ConfigElement represents a configuration element
 type ConfigElement struct {
 	XMLName  xml.Name
 	Content  string    `xml:",chardata"`
 	Children []ConfigElement `xml:",any"`
 }
 
-// Execution 表示插件执行配置
+// Execution represents a plugin execution
 type Execution struct {
 	Id            string       `xml:"id"`
 	Phase         string       `xml:"phase"`
@@ -165,32 +165,32 @@ type Execution struct {
 	Configuration *Configuration `xml:"configuration"`
 }
 
-// Goals 表示目标列表
+// Goals represents the goal list
 type Goals struct {
 	Goal []string `xml:"goal"`
 }
 
-// Executions 表示执行列表
+// Executions represents the execution list
 type Executions struct {
 	Execution []Execution `xml:"execution"`
 }
 
-// PluginManagement 表示插件管理
+// PluginManagement represents plugin management
 type PluginManagement struct {
 	Plugins *Plugins `xml:"plugins"`
 }
 
-// Plugins 表示插件列表
+// Plugins represents the plugin list
 type Plugins struct {
 	Plugin []Plugin `xml:"plugin"`
 }
 
-// Filters 表示构建过滤器
+// Filters represents the build filters
 type Filters struct {
 	Filter []string `xml:"filter"`
 }
 
-// Profile 表示 Maven Profile
+// Profile represents a Maven Profile
 type Profile struct {
 	Id             string       `xml:"id"`
 	Activation     *Activation  `xml:"activation"`
@@ -205,7 +205,7 @@ type Profile struct {
 	Reporting      *Reporting   `xml:"reporting"`
 }
 
-// ProfileBuild 表示 Profile 中的构建配置
+// ProfileBuild represents the build configuration within a Profile
 type ProfileBuild struct {
 	DefaultGoal    string       `xml:"defaultGoal"`
 	Resources      *Resources   `xml:"resources"`
@@ -215,7 +215,7 @@ type ProfileBuild struct {
 	Filters        *Filters     `xml:"filters"`
 }
 
-// Activation 表示 Profile 激活条件
+// Activation represents the Profile activation condition
 type Activation struct {
 	ActiveByDefault bool           `xml:"activeByDefault"`
 	Jdk            string         `xml:"jdk"`
@@ -224,7 +224,7 @@ type Activation struct {
 	File           *ActivationFile `xml:"file"`
 }
 
-// ActivationOs 表示操作系统激活条件
+// ActivationOs represents the operating system activation condition
 type ActivationOs struct {
 	Name    string `xml:"name"`
 	Family  string `xml:"family"`
@@ -232,24 +232,24 @@ type ActivationOs struct {
 	Version string `xml:"version"`
 }
 
-// ActivationProperty 表示属性激活条件
+// ActivationProperty represents the property activation condition
 type ActivationProperty struct {
 	Name  string `xml:"name"`
 	Value string `xml:"value"`
 }
 
-// ActivationFile 表示文件激活条件
+// ActivationFile represents the file activation condition
 type ActivationFile struct {
 	Exists    string `xml:"exists"`
 	Missing   string `xml:"missing"`
 }
 
-// Profiles 表示 Profile 列表
+// Profiles represents the Profile list
 type Profiles struct {
 	Profile []Profile `xml:"profile"`
 }
 
-// Repository 表示 Maven 仓库
+// Repository represents a Maven repository
 type Repository struct {
 	Id        string       `xml:"id"`
 	Name      string       `xml:"name"`
@@ -259,19 +259,19 @@ type Repository struct {
 	Snapshots *RepoPolicy `xml:"snapshots"`
 }
 
-// RepoPolicy 表示仓库策略
+// RepoPolicy represents the repository policy
 type RepoPolicy struct {
 	Enabled        bool   `xml:"enabled"`
 	UpdatePolicy   string `xml:"updatePolicy"`
 	ChecksumPolicy string `xml:"checksumPolicy"`
 }
 
-// Repositories 表示仓库列表
+// Repositories represents the repository list
 type Repositories struct {
 	Repository []Repository `xml:"repository"`
 }
 
-// Scm 表示源代码管理信息
+// Scm represents the SCM (Source Code Management) information
 type Scm struct {
 	Connection          string `xml:"connection"`
 	DeveloperConnection string `xml:"developerConnection"`
@@ -279,19 +279,19 @@ type Scm struct {
 	URL                 string `xml:"url"`
 }
 
-// CiManagement 表示 CI 管理信息
+// CiManagement represents the CI management information
 type CiManagement struct {
 	System    string       `xml:"system"`
 	URL       string       `xml:"url"`
 	Notifiers *Notifiers   `xml:"notifiers"`
 }
 
-// Notifiers 表示通知者列表
+// Notifiers represents the notifier list
 type Notifiers struct {
 	Notifier []Notifier `xml:"notifier"`
 }
 
-// Notifier 表示通知者
+// Notifier represents a notifier
 type Notifier struct {
 	Type          string `xml:"type"`
 	SendOnError   bool   `xml:"sendOnError"`
@@ -302,19 +302,19 @@ type Notifier struct {
 	Configuration *Configuration `xml:"configuration"`
 }
 
-// IssueManagement 表示问题追踪系统信息
+// IssueManagement represents the issue tracking system information
 type IssueManagement struct {
 	System string `xml:"system"`
 	URL    string `xml:"url"`
 }
 
-// Organization 表示组织信息
+// Organization represents the organization information
 type Organization struct {
 	Name string `xml:"name"`
 	URL  string `xml:"url"`
 }
 
-// License 表示许可证信息
+// License represents the license information
 type License struct {
 	Name string `xml:"name"`
 	URL  string `xml:"url"`
@@ -322,12 +322,12 @@ type License struct {
 	Comments string `xml:"comments"`
 }
 
-// Licenses 表示许可证列表
+// Licenses represents the license list
 type Licenses struct {
 	License []License `xml:"license"`
 }
 
-// Developer 表示开发者信息
+// Developer represents the developer information
 type Developer struct {
 	Id    string `xml:"id"`
 	Name  string `xml:"name"`
@@ -339,17 +339,17 @@ type Developer struct {
 	Timezone string `xml:"timezone"`
 }
 
-// Roles 表示角色列表
+// Roles represents the role list
 type Roles struct {
 	Role []string `xml:"role"`
 }
 
-// Developers 表示开发者列表
+// Developers represents the developer list
 type Developers struct {
 	Developer []Developer `xml:"developer"`
 }
 
-// Contributor 表示贡献者信息
+// Contributor represents the contributor information
 type Contributor struct {
 	Name  string `xml:"name"`
 	Email string `xml:"email"`
@@ -360,12 +360,12 @@ type Contributor struct {
 	Timezone string `xml:"timezone"`
 }
 
-// Contributors 表示贡献者列表
+// Contributors represents the contributor list
 type Contributors struct {
 	Contributor []Contributor `xml:"contributor"`
 }
 
-// MailingList 表示邮件列表
+// MailingList represents a mailing list
 type MailingList struct {
 	Name      string `xml:"name"`
 	Subscribe string `xml:"subscribe"`
@@ -375,22 +375,22 @@ type MailingList struct {
 	OtherArchives *OtherArchives `xml:"otherArchives"`
 }
 
-// OtherArchives 表示其他归档
+// OtherArchives represents other archives
 type OtherArchives struct {
 	OtherArchive []string `xml:"otherArchive"`
 }
 
-// MailingLists 表示邮件列表
+// MailingLists represents the mailing list collection
 type MailingLists struct {
 	MailingList []MailingList `xml:"mailingList"`
 }
 
-// Prerequisites 表示前置条件
+// Prerequisites represents the prerequisites
 type Prerequisites struct {
 	Maven string `xml:"maven"`
 }
 
-// DistributionManagement 表示分发管理
+// DistributionManagement represents the distribution management
 type DistributionManagement struct {
 	Repository       *DeploymentRepository `xml:"repository"`
 	SnapshotRepository *DeploymentRepository `xml:"snapshotRepository"`
@@ -400,7 +400,7 @@ type DistributionManagement struct {
 	Status           string             `xml:"status"`
 }
 
-// DeploymentRepository 表示部署仓库
+// DeploymentRepository represents a deployment repository
 type DeploymentRepository struct {
 	Id        string `xml:"id"`
 	Name      string `xml:"name"`
@@ -409,14 +409,14 @@ type DeploymentRepository struct {
 	UniqueVersion bool `xml:"uniqueVersion"`
 }
 
-// Site 表示站点部署信息
+// Site represents the site deployment information
 type Site struct {
 	Id   string `xml:"id"`
 	Name string `xml:"name"`
 	URL  string `xml:"url"`
 }
 
-// Relocation 表示重定位信息
+// Relocation represents the relocation information
 type Relocation struct {
 	GroupId    string `xml:"groupId"`
 	ArtifactId string `xml:"artifactId"`
@@ -424,17 +424,17 @@ type Relocation struct {
 	Message    string `xml:"message"`
 }
 
-// Reports 表示报告配置
+// Reports represents the report configuration
 type Reports struct {}
 
-// Reporting 表示报告生成配置
+// Reporting represents the report generation configuration
 type Reporting struct {
 	ExcludeDefaults bool    `xml:"excludeDefaults"`
 	OutputDirectory string  `xml:"outputDirectory"`
 	Plugins         *ReportPlugins `xml:"plugins"`
 }
 
-// ReportPlugin 表示报告插件
+// ReportPlugin represents a report plugin
 type ReportPlugin struct {
 	GroupId      string       `xml:"groupId"`
 	ArtifactId  string       `xml:"artifactId"`
@@ -444,7 +444,7 @@ type ReportPlugin struct {
 	ReportSets  *ReportSets  `xml:"reportSets"`
 }
 
-// ReportSet 表示报告集
+// ReportSet represents a report set
 type ReportSet struct {
 	Id            string       `xml:"id"`
 	Reports       *Reports     `xml:"reports"`
@@ -452,12 +452,12 @@ type ReportSet struct {
 	Configuration *Configuration `xml:"configuration"`
 }
 
-// ReportSets 表示报告集列表
+// ReportSets represents the report set list
 type ReportSets struct {
 	ReportSet []ReportSet `xml:"reportSet"`
 }
 
-// ReportPlugins 表示报告插件列表
+// ReportPlugins represents the report plugin list
 type ReportPlugins struct {
 	ReportPlugin []ReportPlugin `xml:"reportPlugin"`
 }

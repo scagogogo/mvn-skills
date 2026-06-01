@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// CommandBuilder 使用 builder 模式构建和执行 Maven 命令
-// 提供流式 API 来设置命令选项，比直接拼接字符串更安全、更易用
+// CommandBuilder uses the builder pattern to construct and execute Maven commands
+// Provides a fluent API to set command options, safer and easier to use than directly concatenating strings
 type CommandBuilder struct {
 	executable       string
 	workingDirectory string
@@ -44,7 +44,7 @@ type CommandBuilder struct {
 	goals            []string
 }
 
-// NewCommandBuilder 创建一个新的 Maven 命令构建器
+// NewCommandBuilder creates a new Maven command builder
 func NewCommandBuilder() *CommandBuilder {
 	return &CommandBuilder{
 		executable: "mvn",
@@ -52,55 +52,55 @@ func NewCommandBuilder() *CommandBuilder {
 	}
 }
 
-// WithExecutable 设置 Maven 可执行文件路径
+// WithExecutable sets the Maven executable path
 func (b *CommandBuilder) WithExecutable(executable string) *CommandBuilder {
 	b.executable = executable
 	return b
 }
 
-// WithWorkingDirectory 设置命令的工作目录
+// WithWorkingDirectory sets the working directory for the command
 func (b *CommandBuilder) WithWorkingDirectory(dir string) *CommandBuilder {
 	b.workingDirectory = dir
 	return b
 }
 
-// WithPomFile 指定要使用的 POM 文件路径（-f / --file）
+// WithPomFile specifies the POM file path to use (-f / --file)
 func (b *CommandBuilder) WithPomFile(pomPath string) *CommandBuilder {
 	b.pomFile = pomPath
 	return b
 }
 
-// WithSettingsFile 指定用户 settings.xml 路径（-s / --settings）
+// WithSettingsFile specifies the user settings.xml path (-s / --settings)
 func (b *CommandBuilder) WithSettingsFile(settingsPath string) *CommandBuilder {
 	b.settingsFile = settingsPath
 	return b
 }
 
-// WithGlobalSettings 指定全局 settings.xml 路径（-gs / --global-settings）
+// WithGlobalSettings specifies the global settings.xml path (-gs / --global-settings)
 func (b *CommandBuilder) WithGlobalSettings(path string) *CommandBuilder {
 	b.globalSettings = path
 	return b
 }
 
-// WithToolchains 指定 toolchains 文件路径（-t / --toolchains）
+// WithToolchains specifies the toolchains file path (-t / --toolchains)
 func (b *CommandBuilder) WithToolchains(path string) *CommandBuilder {
 	b.toolchains = path
 	return b
 }
 
-// WithProfiles 激活指定的 Maven profile（-P）
+// WithProfiles activates the specified Maven profiles (-P)
 func (b *CommandBuilder) WithProfiles(profiles ...string) *CommandBuilder {
 	b.profiles = append(b.profiles, profiles...)
 	return b
 }
 
-// WithProperty 设置系统属性（-Dkey=value）
+// WithProperty sets a system property (-Dkey=value)
 func (b *CommandBuilder) WithProperty(key, value string) *CommandBuilder {
 	b.properties[key] = value
 	return b
 }
 
-// WithProperties 批量设置系统属性
+// WithProperties batch-sets system properties
 func (b *CommandBuilder) WithProperties(props map[string]string) *CommandBuilder {
 	for k, v := range props {
 		b.properties[k] = v
@@ -108,183 +108,183 @@ func (b *CommandBuilder) WithProperties(props map[string]string) *CommandBuilder
 	return b
 }
 
-// WithProjects 指定要构建的模块（-pl / --projects）
+// WithProjects specifies the modules to build (-pl / --projects)
 func (b *CommandBuilder) WithProjects(modules ...string) *CommandBuilder {
 	b.projects = append(b.projects, modules...)
 	return b
 }
 
-// WithAlsoMake 同时构建被选中模块所依赖的模块（-am / --also-make）
+// WithAlsoMake also builds modules that the selected modules depend on (-am / --also-make)
 func (b *CommandBuilder) WithAlsoMake() *CommandBuilder {
 	b.alsoMake = true
 	return b
 }
 
-// WithAlsoMakeDependents 同时构建依赖于选中模块的模块（-amd / --also-make-dependents）
+// WithAlsoMakeDependents also builds modules that depend on the selected modules (-amd / --also-make-dependents)
 func (b *CommandBuilder) WithAlsoMakeDependents() *CommandBuilder {
 	b.alsoMakeDependents = true
 	return b
 }
 
-// WithOffline 启用离线模式（-o / --offline）
+// WithOffline enables offline mode (-o / --offline)
 func (b *CommandBuilder) WithOffline() *CommandBuilder {
 	b.offline = true
 	return b
 }
 
-// WithBatchMode 启用批处理/非交互模式（-B / --batch-mode），CI/CD 环境必需
+// WithBatchMode enables batch/non-interactive mode (-B / --batch-mode), required for CI/CD environments
 func (b *CommandBuilder) WithBatchMode() *CommandBuilder {
 	b.batchMode = true
 	return b
 }
 
-// WithUpdateSnapshots 强制更新 SNAPSHOT 依赖（-U / --update-snapshots）
+// WithUpdateSnapshots forces updating of SNAPSHOT dependencies (-U / --update-snapshots)
 func (b *CommandBuilder) WithUpdateSnapshots() *CommandBuilder {
 	b.updateSnapshots = true
 	return b
 }
 
-// WithSkipTests 跳过测试执行但仍然编译测试代码（-DskipTests）
+// WithSkipTests skips test execution but still compiles test code (-DskipTests)
 func (b *CommandBuilder) WithSkipTests() *CommandBuilder {
 	b.skipTests = true
 	return b
 }
 
-// WithSkipTestsCompletely 完全跳过测试（不编译也不执行）（-Dmaven.test.skip=true）
+// WithSkipTestsCompletely skips tests entirely (no compilation or execution) (-Dmaven.test.skip=true)
 func (b *CommandBuilder) WithSkipTestsCompletely() *CommandBuilder {
 	b.mavenTestSkip = true
 	return b
 }
 
-// WithErrors 显示完整的错误堆栈信息（-e / --errors）
+// WithErrors displays full error stack traces (-e / --errors)
 func (b *CommandBuilder) WithErrors() *CommandBuilder {
 	b.showErrors = true
 	return b
 }
 
-// WithDebug 启用调试输出（-X / --debug）
+// WithDebug enables debug output (-X / --debug)
 func (b *CommandBuilder) WithDebug() *CommandBuilder {
 	b.debug = true
 	return b
 }
 
-// WithQuiet 启用安静模式，只输出错误（-q / --quiet）
+// WithQuiet enables quiet mode, only outputting errors (-q / --quiet)
 func (b *CommandBuilder) WithQuiet() *CommandBuilder {
 	b.quiet = true
 	return b
 }
 
-// WithThreads 设置并行构建线程数（-T / --threads）
+// WithThreads sets the number of parallel build threads (-T / --threads)
 func (b *CommandBuilder) WithThreads(n int) *CommandBuilder {
 	b.threads = n
 	return b
 }
 
-// WithThreadSpec 设置并行构建线程规格，如 "2C" 表示每核心 2 线程
+// WithThreadSpec sets the parallel build thread specification, e.g. "2C" means 2 threads per core
 func (b *CommandBuilder) WithThreadSpec(spec string) *CommandBuilder {
 	b.properties["maven.threads"] = spec
 	return b
 }
 
-// WithNonRecursive 不递归构建子模块（-N / --non-recursive）
+// WithNonRecursive does not recursively build submodules (-N / --non-recursive)
 func (b *CommandBuilder) WithNonRecursive() *CommandBuilder {
 	b.nonRecursive = true
 	return b
 }
 
-// WithResumeFrom 从指定模块恢复构建（-rf / --resume-from）
+// WithResumeFrom resumes the build from the specified module (-rf / --resume-from)
 func (b *CommandBuilder) WithResumeFrom(module string) *CommandBuilder {
 	b.resumeFrom = module
 	return b
 }
 
-// WithFailAtEnd 构建失败时继续其他模块，最后再失败（-fae / --fail-at-end）
+// WithFailAtEnd continues building other modules on failure, failing at the end (-fae / --fail-at-end)
 func (b *CommandBuilder) WithFailAtEnd() *CommandBuilder {
 	b.failAtEnd = true
 	return b
 }
 
-// WithFailNever 永不因构建失败而停止（-fn / --fail-never）
+// WithFailNever never stops the build due to failures (-fn / --fail-never)
 func (b *CommandBuilder) WithFailNever() *CommandBuilder {
 	b.failNever = true
 	return b
 }
 
-// WithFailFast 遇到第一个失败就停止（-ff / --fail-fast），这是默认行为
+// WithFailFast stops on the first failure (-ff / --fail-fast), this is the default behavior
 func (b *CommandBuilder) WithFailFast() *CommandBuilder {
 	b.failFast = true
 	return b
 }
 
-// WithNoTransferProgress 不显示下载/上传进度（-ntp / --no-transfer-progress），CI 日志更干净
+// WithNoTransferProgress does not show download/upload progress (-ntp / --no-transfer-progress), cleaner CI logs
 func (b *CommandBuilder) WithNoTransferProgress() *CommandBuilder {
 	b.noTransferProgress = true
 	return b
 }
 
-// WithStrictChecksums 校验和不匹配时构建失败（-C / --strict-checksums）
+// WithStrictChecksums fails the build on checksum mismatch (-C / --strict-checksums)
 func (b *CommandBuilder) WithStrictChecksums() *CommandBuilder {
 	b.strictChecksums = true
 	return b
 }
 
-// WithLaxChecksums 校验和不匹配时发出警告（-c / --lax-checksums）
+// WithLaxChecksums issues a warning on checksum mismatch (-c / --lax-checksums)
 func (b *CommandBuilder) WithLaxChecksums() *CommandBuilder {
 	b.laxChecksums = true
 	return b
 }
 
-// WithShowVersion 显示版本信息但不停止构建（-V / --show-version）
+// WithShowVersion displays version information without stopping the build (-V / --show-version)
 func (b *CommandBuilder) WithShowVersion() *CommandBuilder {
 	b.showVersion = true
 	return b
 }
 
-// WithStdin 设置标准输入
+// WithStdin sets the standard input
 func (b *CommandBuilder) WithStdin(r io.Reader) *CommandBuilder {
 	b.stdin = r
 	return b
 }
 
-// WithStdout 设置标准输出
+// WithStdout sets the standard output
 func (b *CommandBuilder) WithStdout(w io.Writer) *CommandBuilder {
 	b.stdout = w
 	return b
 }
 
-// WithStderr 设置标准错误
+// WithStderr sets the standard error
 func (b *CommandBuilder) WithStderr(w io.Writer) *CommandBuilder {
 	b.stderr = w
 	return b
 }
 
-// WithGoal 添加要执行的 Maven 目标/阶段
+// WithGoal adds a Maven goal/phase to execute
 func (b *CommandBuilder) WithGoal(goal string) *CommandBuilder {
 	b.goals = append(b.goals, goal)
 	return b
 }
 
-// WithGoals 批量添加要执行的 Maven 目标/阶段
+// WithGoals batch-adds Maven goals/phases to execute
 func (b *CommandBuilder) WithGoals(goals ...string) *CommandBuilder {
 	b.goals = append(b.goals, goals...)
 	return b
 }
 
-// buildArgs 将所有构建器选项转换为 Maven 命令行参数
+// buildArgs converts all builder options to Maven command-line arguments
 func (b *CommandBuilder) buildArgs() []string {
 	var args []string
 
-	// POM 文件
+	// POM file
 	if b.pomFile != "" {
 		args = append(args, "-f", b.pomFile)
 	}
 
-	// Settings 文件
+	// Settings file
 	if b.settingsFile != "" {
 		args = append(args, "-s", b.settingsFile)
 	}
 
-	// 全局 Settings
+	// Global settings
 	if b.globalSettings != "" {
 		args = append(args, "-gs", b.globalSettings)
 	}
@@ -294,12 +294,12 @@ func (b *CommandBuilder) buildArgs() []string {
 		args = append(args, "-t", b.toolchains)
 	}
 
-	// Profile
+	// Profiles
 	if len(b.profiles) > 0 {
 		args = append(args, "-P", strings.Join(b.profiles, ","))
 	}
 
-	// 项目/模块
+	// Projects/modules
 	if len(b.projects) > 0 {
 		args = append(args, "-pl", strings.Join(b.projects, ","))
 	}
@@ -404,7 +404,7 @@ func (b *CommandBuilder) buildArgs() []string {
 		args = append(args, "-V")
 	}
 
-	// 系统属性
+	// System properties
 	for key, value := range b.properties {
 		args = append(args, fmt.Sprintf("-D%s=%s", key, value))
 	}
@@ -415,7 +415,7 @@ func (b *CommandBuilder) buildArgs() []string {
 	return args
 }
 
-// Build 构建命令选项但不执行，返回 *Options 供后续使用
+// Build constructs the command options without executing, returning *Options for later use
 func (b *CommandBuilder) Build() *Options {
 	return &Options{
 		Executable:       b.executable,
@@ -427,14 +427,14 @@ func (b *CommandBuilder) Build() *Options {
 	}
 }
 
-// Run 执行构建好的 Maven 命令
+// Run executes the constructed Maven command
 func (b *CommandBuilder) Run() error {
 	return Exec(b.Build())
 }
 
-// RunForStdout 执行构建好的 Maven 命令并返回标准输出
+// RunForStdout executes the constructed Maven command and returns the standard output
 func (b *CommandBuilder) RunForStdout() (string, error) {
-	builder := *b // 浅拷贝
+	builder := *b // shallow copy
 	builder.stdout = nil
 	builder.stderr = nil
 	builder.stdin = nil
@@ -443,49 +443,49 @@ func (b *CommandBuilder) RunForStdout() (string, error) {
 	return ExecForStdout(builder.executable, args...)
 }
 
-// 便捷方法：使用 builder 执行常用生命周期阶段
-// 这些方法不会修改原始 builder，而是创建副本并添加目标
+// Convenience methods: using the builder to execute common lifecycle phases
+// These methods do not modify the original builder; instead they create copies and add goals
 
-// withGoal 创建一个副本并添加目标，不修改原始 builder
+// withGoal creates a copy and adds a goal without modifying the original builder
 func (b *CommandBuilder) withGoal(goal string) *CommandBuilder {
-	copy := *b // 浅拷贝
-	copy.goals = append([]string{}, b.goals...) // 深拷贝 goals 列表
+	copy := *b // shallow copy
+	copy.goals = append([]string{}, b.goals...) // deep copy goals slice
 	copy.goals = append(copy.goals, goal)
 	return &copy
 }
 
-// Clean 清理构建产物
+// Clean cleans up build artifacts
 func (b *CommandBuilder) Clean() (string, error) {
 	return b.withGoal("clean").RunForStdout()
 }
 
-// Compile 编译源码
+// Compile compiles source code
 func (b *CommandBuilder) Compile() (string, error) {
 	return b.withGoal("compile").RunForStdout()
 }
 
-// Test 运行测试
+// Test runs tests
 func (b *CommandBuilder) Test() (string, error) {
 	return b.withGoal("test").RunForStdout()
 }
 
-// Package 打包
+// Package packages the project
 func (b *CommandBuilder) Package() (string, error) {
 	return b.withGoal("package").RunForStdout()
 }
 
-// Install 安装到本地仓库（执行 mvn install，不带 clean）
-// 注意：如果需要执行 clean install，使用 WithGoals("clean", "install").RunForStdout()
+// Install installs to the local repository (executes mvn install, without clean)
+// Note: If you need to run clean install, use WithGoals("clean", "install").RunForStdout()
 func (b *CommandBuilder) Install() (string, error) {
 	return b.withGoal("install").RunForStdout()
 }
 
-// Deploy 部署到远程仓库
+// Deploy deploys to a remote repository
 func (b *CommandBuilder) Deploy() (string, error) {
 	return b.withGoal("deploy").RunForStdout()
 }
 
-// Verify 验证
+// Verify verifies the project
 func (b *CommandBuilder) Verify() (string, error) {
 	return b.withGoal("verify").RunForStdout()
 }

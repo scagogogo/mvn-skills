@@ -90,6 +90,31 @@ output, err := NewCommandBuilder().
 
 **Builder Convenience Methods:** `Clean()`, `Compile()`, `Test()`, `Package()`, `Install()`, `Deploy()`, `Verify()`
 
+> **Immutability:** Convenience methods do NOT mutate the builder. Each call creates a copy
+> with the additional goal, so the original builder remains reusable for subsequent calls.
+
+#### Error Handling
+
+```go
+// MavenError represents a failed Maven command execution
+type MavenError struct {
+    Command   string   // The full command (e.g. "mvn clean install")
+    Args      []string // Command arguments
+    Stderr    string   // Maven's stderr output (truncated to 500 chars)
+    ExitCode  int      // Process exit code (if available)
+    Inner     error    // The original error
+}
+
+// ExecForStdout returns *MavenError when the command fails, including stderr content
+output, err := command.Clean("mvn")
+if err != nil {
+    var me *command.MavenError
+    if errors.As(err, &me) {
+        log.Printf("Maven stderr: %s", me.Stderr)
+    }
+}
+```
+
 #### Generic Execution
 
 ```go
@@ -251,6 +276,12 @@ func (p *Project) GetModules() []string
 func (p *Project) GetPlugins() []Plugin
 func (p *Project) GetProfiles() []Profile
 func (p *Project) GetRepositories() []Repository
+func (p *Project) GetProperties() map[string]string
+func (p *Project) GetLicenses() []License
+func (p *Project) GetDevelopers() []Developer
+func (p *Project) GetScm() *Scm
+func (p *Project) GetBuild() *Build
+func (p *Project) GetPackaging() string  // defaults to "jar" if not specified
 func (p *Project) IsMultiModule() bool
 func (p *Project) HasParent() bool
 func (p *Project) FindDependency(groupId, artifactId string) *Dependency
@@ -281,10 +312,14 @@ func (s *Settings) GetServers() []Server
 func (s *Settings) GetProxies() []Proxy
 func (s *Settings) GetProfiles() []SettingsProfile
 func (s *Settings) GetActiveProfileIds() []string
+func (s *Settings) GetPluginGroups() []string
+func (s *Settings) GetLocalRepository() string
+func (s *Settings) IsOffline() bool
 func (s *Settings) FindServer(id string) *Server
 func (s *Settings) FindMirror(id string) *Mirror
 func (s *Settings) FindMirrorOf(repositoryId string) *Mirror
 func (s *Settings) FindActiveProxy() *Proxy
+func (s *Settings) FindProfile(id string) *SettingsProfile
 ```
 
 **Key Types:** `Settings`, `Server`, `Mirror`, `Proxy`, `SettingsProfile`, `SettingsActivation`

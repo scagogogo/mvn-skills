@@ -9,11 +9,11 @@ import (
 	"strings"
 )
 
-// DefaultLocalRepositoryDirectory 默认的仓库位置，${user.home}/.m2/repository
-// Windows 7：C:/Documents and Settings/<用户名>/.m2/repository
-// Windows 10：C:/Users/<用户名>/.m2/repository
-// Linux：/home/<用户名>/.m2/repository
-// Mac：/Users/<用户名>/.m2/repository
+// DefaultLocalRepositoryDirectory is the default repository location, ${user.home}/.m2/repository
+// Windows 7: C:/Documents and Settings/<username>/.m2/repository
+// Windows 10: C:/Users/<username>/.m2/repository
+// Linux: /home/<username>/.m2/repository
+// Mac: /Users/<username>/.m2/repository
 var DefaultLocalRepositoryDirectory string
 
 func init() {
@@ -24,25 +24,25 @@ func init() {
 	DefaultLocalRepositoryDirectory = filepath.Join(dir, ".m2", "repository")
 }
 
-// ParseLocalRepositoryDirectory 解析本地仓库的位置
+// ParseLocalRepositoryDirectory parses the local repository location
 func ParseLocalRepositoryDirectory(executable string) string {
 
-	// 尝试从已经安装的Maven中寻找仓库的位置
+	// Try to find the repository location from the installed Maven
 	directory, err := command.GetLocalRepositoryDirectory(executable)
 	if err == nil && directory != "" {
 		return directory
 	}
 
-	// 找不到则返回默认的仓库位置
+	// If not found, return the default repository location
 	return DefaultLocalRepositoryDirectory
 }
 
-// BuildDirectory 构造GAV的相对路径
+// BuildDirectory constructs the relative path for a GAV
 func BuildDirectory(groupId, artifactId, version string) string {
 	return filepath.Join(strings.ReplaceAll(groupId, ".", "/"), artifactId, version)
 }
 
-// FindDirectory 在本地仓库中寻找GAV
+// FindDirectory locates the GAV in the local repository
 func FindDirectory(localRepositoryDirectory string, groupId, artifactId, version string) (string, error) {
 	gavDirectory := filepath.Join(localRepositoryDirectory, BuildDirectory(groupId, artifactId, version))
 	stat, err := os.Stat(gavDirectory)
@@ -56,14 +56,14 @@ func FindDirectory(localRepositoryDirectory string, groupId, artifactId, version
 	}
 }
 
-// FindJar 在本地仓库中寻找给定的GAV的Jar包
+// FindJar locates the JAR file for the given GAV in the local repository
 func FindJar(localRepositoryDirectory string, groupId, artifactId, version string) (string, error) {
 	return FindJarWithClassifier(localRepositoryDirectory, groupId, artifactId, version, "")
 }
 
-// FindJarWithClassifier 在本地仓库中寻找给定的GAV和classifier的Jar包
-// classifier 为空字符串时等同于 FindJar，查找主构件
-// classifier 非空时查找带 classifier 的构件，如 "sources"、"javadoc"
+// FindJarWithClassifier locates the JAR file for the given GAV and classifier in the local repository
+// When classifier is an empty string, it is equivalent to FindJar, locating the main artifact
+// When classifier is non-empty, it locates the artifact with the classifier, such as "sources" or "javadoc"
 func FindJarWithClassifier(localRepositoryDirectory string, groupId, artifactId, version, classifier string) (string, error) {
 	directory, err := FindDirectory(localRepositoryDirectory, groupId, artifactId, version)
 	if err != nil {

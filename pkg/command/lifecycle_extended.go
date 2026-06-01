@@ -1,117 +1,117 @@
 package command
 
-// 扩展生命周期阶段命令
-// Maven 有 3 个内置生命周期（clean/default/site），共 28 个阶段
-// lifecycle.go 已实现最常用的 9 个阶段，本文件补全剩余阶段
+// Extended lifecycle phase commands
+// Maven has 3 built-in lifecycles (clean/default/site) with a total of 28 phases
+// lifecycle.go implements the 9 most commonly used phases; this file adds the remaining phases
 
-// --- Default Lifecycle（剩余阶段）---
+// --- Default Lifecycle (remaining phases) ---
 
-// Initialize 初始化构建状态（mvn initialize），常用于在多模块构建中做早期设置
+// Initialize initializes the build state (mvn initialize), commonly used for early setup in multi-module builds
 func Initialize(executable string) (string, error) {
 	return ExecForStdout(executable, "initialize")
 }
 
-// GenerateSources 生成源码（mvn generate-sources），常用于 protobuf、XSD 等代码生成
+// GenerateSources generates source code (mvn generate-sources), commonly used for protobuf, XSD, etc. code generation
 func GenerateSources(executable string) (string, error) {
 	return ExecForStdout(executable, "generate-sources")
 }
 
-// ProcessSources 处理源码（mvn process-sources）
+// ProcessSources processes source code (mvn process-sources)
 func ProcessSources(executable string) (string, error) {
 	return ExecForStdout(executable, "process-sources")
 }
 
-// GenerateResources 生成资源文件（mvn generate-resources）
+// GenerateResources generates resource files (mvn generate-resources)
 func GenerateResources(executable string) (string, error) {
 	return ExecForStdout(executable, "generate-resources")
 }
 
-// ProcessResources 处理资源文件（mvn process-resources），如变量替换等
+// ProcessResources processes resource files (mvn process-resources), such as variable substitution
 func ProcessResources(executable string) (string, error) {
 	return ExecForStdout(executable, "process-resources")
 }
 
-// ProcessClasses 处理编译后的字节码（mvn process-classes），如字节码增强
+// ProcessClasses processes compiled bytecode (mvn process-classes), such as bytecode enhancement
 func ProcessClasses(executable string) (string, error) {
 	return ExecForStdout(executable, "process-classes")
 }
 
-// GenerateTestSources 生成测试源码（mvn generate-test-sources）
+// GenerateTestSources generates test source code (mvn generate-test-sources)
 func GenerateTestSources(executable string) (string, error) {
 	return ExecForStdout(executable, "generate-test-sources")
 }
 
-// ProcessTestSources 处理测试源码（mvn process-test-sources）
+// ProcessTestSources processes test source code (mvn process-test-sources)
 func ProcessTestSources(executable string) (string, error) {
 	return ExecForStdout(executable, "process-test-sources")
 }
 
-// GenerateTestResources 生成测试资源文件（mvn generate-test-resources）
+// GenerateTestResources generates test resource files (mvn generate-test-resources)
 func GenerateTestResources(executable string) (string, error) {
 	return ExecForStdout(executable, "generate-test-resources")
 }
 
-// ProcessTestResources 处理测试资源文件（mvn process-test-resources）
+// ProcessTestResources processes test resource files (mvn process-test-resources)
 func ProcessTestResources(executable string) (string, error) {
 	return ExecForStdout(executable, "process-test-resources")
 }
 
-// ProcessTestClasses 处理编译后的测试字节码（mvn process-test-classes）
+// ProcessTestClasses processes compiled test bytecode (mvn process-test-classes)
 func ProcessTestClasses(executable string) (string, error) {
 	return ExecForStdout(executable, "process-test-classes")
 }
 
-// PreparePackage 打包前的准备工作（mvn prepare-package），常用于 CI 流水线
+// PreparePackage performs preparation work before packaging (mvn prepare-package), commonly used in CI pipelines
 func PreparePackage(executable string) (string, error) {
 	return ExecForStdout(executable, "prepare-package")
 }
 
-// PreIntegrationTest 集成测试前的准备工作（mvn pre-integration-test），如启动服务器
+// PreIntegrationTest performs preparation work before integration tests (mvn pre-integration-test), such as starting servers
 func PreIntegrationTest(executable string) (string, error) {
 	return ExecForStdout(executable, "pre-integration-test")
 }
 
-// IntegrationTest 运行集成测试（mvn integration-test），通常配合 failsafe 插件使用
+// IntegrationTest runs integration tests (mvn integration-test), typically used with the failsafe plugin
 func IntegrationTest(executable string) (string, error) {
 	return ExecForStdout(executable, "integration-test")
 }
 
-// PostIntegrationTest 集成测试后的清理工作（mvn post-integration-test），如关闭服务器
+// PostIntegrationTest performs cleanup after integration tests (mvn post-integration-test), such as shutting down servers
 func PostIntegrationTest(executable string) (string, error) {
 	return ExecForStdout(executable, "post-integration-test")
 }
 
-// StandaloneInstall 安装到本地仓库（mvn install），不先执行 clean
-// 注意：lifecycle.go 中的 Install() 执行的是 "clean install"
+// StandaloneInstall installs to the local repository (mvn install) without running clean first
+// Note: The Install() in lifecycle.go executes "clean install"
 func StandaloneInstall(executable string) (string, error) {
 	return ExecForStdout(executable, "install")
 }
 
-// --- Clean Lifecycle（剩余阶段）---
+// --- Clean Lifecycle (remaining phases) ---
 
-// PreClean 清理前的准备工作（mvn pre-clean）
+// PreClean performs preparation work before cleaning (mvn pre-clean)
 func PreClean(executable string) (string, error) {
 	return ExecForStdout(executable, "pre-clean")
 }
 
-// PostClean 清理后的善后工作（mvn post-clean）
+// PostClean performs cleanup work after cleaning (mvn post-clean)
 func PostClean(executable string) (string, error) {
 	return ExecForStdout(executable, "post-clean")
 }
 
-// --- Site Lifecycle（剩余阶段）---
+// --- Site Lifecycle (remaining phases) ---
 
-// PreSite 站点生成前的准备工作（mvn pre-site）
+// PreSite performs preparation work before site generation (mvn pre-site)
 func PreSite(executable string) (string, error) {
 	return ExecForStdout(executable, "pre-site")
 }
 
-// PostSite 站点生成后的善后工作（mvn post-site）
+// PostSite performs cleanup work after site generation (mvn post-site)
 func PostSite(executable string) (string, error) {
 	return ExecForStdout(executable, "post-site")
 }
 
-// SiteDeploy 部署生成的站点到 Web 服务器（mvn site-deploy）
+// SiteDeploy deploys the generated site to a web server (mvn site-deploy)
 func SiteDeploy(executable string) (string, error) {
 	return ExecForStdout(executable, "site-deploy")
 }

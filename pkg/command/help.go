@@ -1,21 +1,21 @@
 package command
 
-// EffectivePom 显示当前项目的有效 POM 配置，合并了所有激活的 profile
+// EffectivePom displays the effective POM configuration for the current project, merging all active profiles
 func EffectivePom(executable string) (string, error) {
 	return ExecForStdout(executable, "help:effective-pom")
 }
 
-// EffectiveSettings 显示当前有效的 Maven 设置，合并了全局和用户级 settings.xml
+// EffectiveSettings displays the effective Maven settings, merging global and user-level settings.xml
 func EffectiveSettings(executable string) (string, error) {
 	return ExecForStdout(executable, "help:effective-settings")
 }
 
-// ActiveProfiles 显示当前项目中所有激活的 Maven profile
+// ActiveProfiles displays all active Maven profiles in the current project
 func ActiveProfiles(executable string) (string, error) {
 	return ExecForStdout(executable, "help:active-profiles")
 }
 
-// DescribePlugin 描述指定 Maven 插件的目标详细信息
+// DescribePlugin describes the goal details of the specified Maven plugin
 func DescribePlugin(executable string, plugin string) (string, error) {
 	return ExecForStdout(executable, "help:describe", "-Dplugin="+plugin)
 }

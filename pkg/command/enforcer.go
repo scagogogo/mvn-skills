@@ -1,10 +1,10 @@
 package command
 
-// Enforcer 插件相关命令
-// enforcer 插件用于执行构建规则（依赖收敛、Java 版本等）
+// Enforcer plugin-related commands
+// The enforcer plugin is used to enforce build rules (dependency convergence, Java version, etc.)
 
-// EnforcerEnforce 执行构建规则检查（mvn enforcer:enforce）
-// 常用于 CI 流水线中强制执行项目规范
+// EnforcerEnforce executes build rule checks (mvn enforcer:enforce)
+// Commonly used in CI pipelines to enforce project standards
 func EnforcerEnforce(executable string) (string, error) {
 	return ExecForStdout(executable, "enforcer:enforce")
 }

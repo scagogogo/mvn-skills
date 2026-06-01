@@ -2,7 +2,7 @@ package settings
 
 import "encoding/xml"
 
-// Settings 表示 Maven settings.xml 的根结构
+// Settings represents the root structure of a Maven settings.xml file
 type Settings struct {
 	XMLName           xml.Name           `xml:"settings"`
 	Xmlns             string             `xml:"xmlns,attr"`
@@ -18,17 +18,17 @@ type Settings struct {
 	ActiveProfiles    *ActiveProfiles    `xml:"activeProfiles"`
 }
 
-// PluginGroup 表示插件组前缀
+// PluginGroup represents a plugin group prefix
 type PluginGroup struct {
 	GroupId string `xml:"groupId"`
 }
 
-// PluginGroups 表示插件组列表
+// PluginGroups represents the plugin group list
 type PluginGroups struct {
-	PluginGroup []PluginGroup `xml:"pluginGroup"`
+	PluginGroup []string `xml:"pluginGroup"`
 }
 
-// Server 表示服务器认证信息
+// Server represents server authentication information
 type Server struct {
 	Id       string `xml:"id"`
 	Username string `xml:"username"`
@@ -40,12 +40,12 @@ type Server struct {
 	Configuration *Configuration `xml:"configuration"`
 }
 
-// Servers 表示服务器列表
+// Servers represents the server list
 type Servers struct {
 	Server []Server `xml:"server"`
 }
 
-// Mirror 表示仓库镜像配置
+// Mirror represents a repository mirror configuration
 type Mirror struct {
 	Id       string `xml:"id"`
 	Name     string `xml:"name"`
@@ -56,12 +56,12 @@ type Mirror struct {
 	Blocked  bool   `xml:"blocked"`
 }
 
-// Mirrors 表示镜像列表
+// Mirrors represents the mirror list
 type Mirrors struct {
 	Mirror []Mirror `xml:"mirror"`
 }
 
-// Proxy 表示代理配置
+// Proxy represents a proxy configuration
 type Proxy struct {
 	Id       string `xml:"id"`
 	Active   bool   `xml:"active"`
@@ -73,12 +73,12 @@ type Proxy struct {
 	NonProxyHosts string `xml:"nonProxyHosts"`
 }
 
-// Proxies 表示代理列表
+// Proxies represents the proxy list
 type Proxies struct {
 	Proxy []Proxy `xml:"proxy"`
 }
 
-// SettingsProfile 表示 settings.xml 中的 Profile
+// SettingsProfile represents a Profile in settings.xml
 type SettingsProfile struct {
 	Id                 string              `xml:"id"`
 	Activation         *SettingsActivation `xml:"activation"`
@@ -87,7 +87,7 @@ type SettingsProfile struct {
 	PluginRepositories *SettingsRepositories `xml:"pluginRepositories"`
 }
 
-// SettingsActivation 表示 settings Profile 的激活条件
+// SettingsActivation represents the activation condition for a settings Profile
 type SettingsActivation struct {
 	ActiveByDefault bool                `xml:"activeByDefault"`
 	Jdk            string              `xml:"jdk"`
@@ -96,7 +96,7 @@ type SettingsActivation struct {
 	File           *SettingsActivationFile `xml:"file"`
 }
 
-// SettingsActivationOs 表示操作系统激活条件
+// SettingsActivationOs represents the operating system activation condition
 type SettingsActivationOs struct {
 	Name    string `xml:"name"`
 	Family  string `xml:"family"`
@@ -104,30 +104,30 @@ type SettingsActivationOs struct {
 	Version string `xml:"version"`
 }
 
-// SettingsActivationProperty 表示属性激活条件
+// SettingsActivationProperty represents the property activation condition
 type SettingsActivationProperty struct {
 	Name  string `xml:"name"`
 	Value string `xml:"value"`
 }
 
-// SettingsActivationFile 表示文件激活条件
+// SettingsActivationFile represents the file activation condition
 type SettingsActivationFile struct {
 	Exists  string `xml:"exists"`
 	Missing string `xml:"missing"`
 }
 
-// SettingsProperties 表示 settings Profile 中的属性
+// SettingsProperties represents the properties in a settings Profile
 type SettingsProperties struct {
 	Entries []SettingsPropertyEntry
 }
 
-// SettingsPropertyEntry 表示单个属性
+// SettingsPropertyEntry represents a single property
 type SettingsPropertyEntry struct {
 	Key   string
 	Value string
 }
 
-// SettingsRepository 表示 settings 中的仓库配置
+// SettingsRepository represents a repository configuration in settings
 type SettingsRepository struct {
 	Id        string               `xml:"id"`
 	Name      string               `xml:"name"`
@@ -137,34 +137,34 @@ type SettingsRepository struct {
 	Snapshots *SettingsRepoPolicy `xml:"snapshots"`
 }
 
-// SettingsRepoPolicy 表示仓库策略
+// SettingsRepoPolicy represents the repository policy
 type SettingsRepoPolicy struct {
 	Enabled        bool   `xml:"enabled"`
 	UpdatePolicy   string `xml:"updatePolicy"`
 	ChecksumPolicy string `xml:"checksumPolicy"`
 }
 
-// SettingsRepositories 表示仓库列表
+// SettingsRepositories represents the repository list
 type SettingsRepositories struct {
 	Repository []SettingsRepository `xml:"repository"`
 }
 
-// SettingsProfiles 表示 Profile 列表
+// SettingsProfiles represents the Profile list
 type SettingsProfiles struct {
 	Profile []SettingsProfile `xml:"profile"`
 }
 
-// ActiveProfiles 表示激活的 Profile 列表
+// ActiveProfiles represents the active Profile list
 type ActiveProfiles struct {
 	ActiveProfile []string `xml:"activeProfile"`
 }
 
-// Configuration 表示通用配置（简化版）
+// Configuration represents generic configuration (simplified version)
 type Configuration struct {
 	Elements []ConfigElement
 }
 
-// ConfigElement 表示配置元素
+// ConfigElement represents a configuration element
 type ConfigElement struct {
 	XMLName  xml.Name
 	Content  string          `xml:",chardata"`

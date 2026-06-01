@@ -2,7 +2,7 @@ package command
 
 import "path/filepath"
 
-// BuildExecutable 根据 %MAVEN_HOME% 构建mvn可执行文件的路径
+// BuildExecutable builds the path to the mvn executable based on the Maven home directory
 func BuildExecutable(mavenHomeDirectory string) string {
 	return filepath.Join(mavenHomeDirectory, "bin/mvn")
 }

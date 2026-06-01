@@ -1,9 +1,9 @@
 package command
 
-// GPG 插件相关命令
-// gpg 插件用于对构件进行 GPG 签名，发布到 Maven Central 的必要步骤
+// GPG plugin-related commands
+// The gpg plugin is used to GPG-sign artifacts; a required step for publishing to Maven Central
 
-// GpgSign 对构件进行 GPG 签名（mvn gpg:sign）
+// GpgSign GPG-signs the artifacts (mvn gpg:sign)
 func GpgSign(executable string) (string, error) {
 	return ExecForStdout(executable, "gpg:sign")
 }

@@ -268,3 +268,70 @@ func TestScmInfo(t *testing.T) {
 	assert.NotNil(t, project.Scm)
 	assert.Equal(t, "scm:git:https://github.com/example/project.git", project.Scm.Connection)
 }
+
+func TestGetScm(t *testing.T) {
+	project, err := ParseBytes([]byte(testPomXML))
+	assert.Nil(t, err)
+
+	scm := project.GetScm()
+	assert.NotNil(t, scm)
+	assert.Equal(t, "scm:git:https://github.com/example/project.git", scm.Connection)
+}
+
+func TestGetScmNil(t *testing.T) {
+	pomXML := `<?xml version="1.0" encoding="UTF-8"?><project><artifactId>no-scm</artifactId></project>`
+	project, err := ParseBytes([]byte(pomXML))
+	assert.Nil(t, err)
+	assert.Nil(t, project.GetScm())
+}
+
+func TestGetPackaging(t *testing.T) {
+	project, err := ParseBytes([]byte(testPomXML))
+	assert.Nil(t, err)
+	assert.Equal(t, "jar", project.GetPackaging())
+
+	// No packaging specified → defaults to "jar"
+	pomXML := `<?xml version="1.0" encoding="UTF-8"?><project><artifactId>no-pack</artifactId></project>`
+	project2, err := ParseBytes([]byte(pomXML))
+	assert.Nil(t, err)
+	assert.Equal(t, "jar", project2.GetPackaging())
+
+	// WAR packaging
+	warPom := `<?xml version="1.0" encoding="UTF-8"?><project><artifactId>war-proj</artifactId><packaging>war</packaging></project>`
+	project3, err := ParseBytes([]byte(warPom))
+	assert.Nil(t, err)
+	assert.Equal(t, "war", project3.GetPackaging())
+}
+
+func TestGetBuild(t *testing.T) {
+	project, err := ParseBytes([]byte(testPomXML))
+	assert.Nil(t, err)
+
+	build := project.GetBuild()
+	assert.NotNil(t, build)
+
+	pomXML := `<?xml version="1.0" encoding="UTF-8"?><project><artifactId>no-build</artifactId></project>`
+	project2, err := ParseBytes([]byte(pomXML))
+	assert.Nil(t, err)
+	assert.Nil(t, project2.GetBuild())
+}
+
+func TestGetLicensesEmpty(t *testing.T) {
+	pomXML := `<?xml version="1.0" encoding="UTF-8"?><project><artifactId>no-lic</artifactId></project>`
+	project, err := ParseBytes([]byte(pomXML))
+	assert.Nil(t, err)
+
+	licenses := project.GetLicenses()
+	assert.NotNil(t, licenses)
+	assert.Empty(t, licenses)
+}
+
+func TestGetDevelopersEmpty(t *testing.T) {
+	pomXML := `<?xml version="1.0" encoding="UTF-8"?><project><artifactId>no-dev</artifactId></project>`
+	project, err := ParseBytes([]byte(pomXML))
+	assert.Nil(t, err)
+
+	developers := project.GetDevelopers()
+	assert.NotNil(t, developers)
+	assert.Empty(t, developers)
+}

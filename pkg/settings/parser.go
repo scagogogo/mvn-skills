@@ -8,7 +8,7 @@ import (
 	"runtime"
 )
 
-// ParseFile 从文件路径解析 settings.xml
+// ParseFile parses a settings.xml from a file path
 func ParseFile(path string) (*Settings, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -18,7 +18,7 @@ func ParseFile(path string) (*Settings, error) {
 	return ParseReader(file)
 }
 
-// ParseReader 从 io.Reader 解析 settings.xml
+// ParseReader parses a settings.xml from an io.Reader
 func ParseReader(r io.Reader) (*Settings, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
@@ -27,7 +27,7 @@ func ParseReader(r io.Reader) (*Settings, error) {
 	return ParseBytes(data)
 }
 
-// ParseBytes 从字节数组解析 settings.xml
+// ParseBytes parses a settings.xml from a byte slice
 func ParseBytes(data []byte) (*Settings, error) {
 	var settings Settings
 	if err := xml.Unmarshal(data, &settings); err != nil {
@@ -36,10 +36,10 @@ func ParseBytes(data []byte) (*Settings, error) {
 	return &settings, nil
 }
 
-// ParseDefault 尝试解析默认位置的 settings.xml
-// 依次检查 ~/.m2/settings.xml 和 ${M2_HOME}/conf/settings.xml
+// ParseDefault attempts to parse the settings.xml at the default location
+// Checks ~/.m2/settings.xml first, then ${M2_HOME}/conf/settings.xml
 func ParseDefault() (*Settings, error) {
-	// 检查用户目录下的 settings.xml
+	// Check the settings.xml in the user's home directory
 	homeDir, err := os.UserHomeDir()
 	if err == nil {
 		userSettings := filepath.Join(homeDir, ".m2", "settings.xml")
@@ -48,7 +48,7 @@ func ParseDefault() (*Settings, error) {
 		}
 	}
 
-	// 检查 M2_HOME 下的 settings.xml
+	// Check the settings.xml under M2_HOME
 	m2Home := getMavenHome()
 	if m2Home != "" {
 		globalSettings := filepath.Join(m2Home, "conf", "settings.xml")
@@ -60,8 +60,8 @@ func ParseDefault() (*Settings, error) {
 	return nil, os.ErrNotExist
 }
 
-// GetDefaultSettingsPath 返回默认 settings.xml 路径
-// 返回用户级 settings.xml 的路径（无论文件是否存在）
+// GetDefaultSettingsPath returns the default settings.xml path
+// Returns the user-level settings.xml path (regardless of whether the file exists)
 func GetDefaultSettingsPath() string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -70,7 +70,7 @@ func GetDefaultSettingsPath() string {
 	return filepath.Join(homeDir, ".m2", "settings.xml")
 }
 
-// GetMirrors 获取所有镜像配置
+// GetMirrors gets all mirror configurations
 func (s *Settings) GetMirrors() []Mirror {
 	if s.Mirrors == nil {
 		return []Mirror{}
@@ -78,7 +78,7 @@ func (s *Settings) GetMirrors() []Mirror {
 	return s.Mirrors.Mirror
 }
 
-// GetServers 获取所有服务器认证信息
+// GetServers gets all server authentication information
 func (s *Settings) GetServers() []Server {
 	if s.Servers == nil {
 		return []Server{}
@@ -86,7 +86,7 @@ func (s *Settings) GetServers() []Server {
 	return s.Servers.Server
 }
 
-// GetProxies 获取所有代理配置
+// GetProxies gets all proxy configurations
 func (s *Settings) GetProxies() []Proxy {
 	if s.Proxies == nil {
 		return []Proxy{}
@@ -94,7 +94,7 @@ func (s *Settings) GetProxies() []Proxy {
 	return s.Proxies.Proxy
 }
 
-// GetProfiles 获取所有 Profile
+// GetProfiles gets all Profiles
 func (s *Settings) GetProfiles() []SettingsProfile {
 	if s.Profiles == nil {
 		return []SettingsProfile{}
@@ -102,7 +102,7 @@ func (s *Settings) GetProfiles() []SettingsProfile {
 	return s.Profiles.Profile
 }
 
-// GetActiveProfileIds 获取激活的 Profile ID 列表
+// GetActiveProfileIds gets the active Profile ID list
 func (s *Settings) GetActiveProfileIds() []string {
 	if s.ActiveProfiles == nil {
 		return []string{}
@@ -110,7 +110,7 @@ func (s *Settings) GetActiveProfileIds() []string {
 	return s.ActiveProfiles.ActiveProfile
 }
 
-// FindServer 根据 ID 查找服务器认证信息
+// FindServer finds server authentication information by ID
 func (s *Settings) FindServer(id string) *Server {
 	for i := range s.GetServers() {
 		if s.Servers.Server[i].Id == id {
@@ -120,7 +120,7 @@ func (s *Settings) FindServer(id string) *Server {
 	return nil
 }
 
-// FindMirror 根据 ID 查找镜像配置
+// FindMirror finds a mirror configuration by ID
 func (s *Settings) FindMirror(id string) *Mirror {
 	for i := range s.GetMirrors() {
 		if s.Mirrors.Mirror[i].Id == id {
@@ -130,7 +130,7 @@ func (s *Settings) FindMirror(id string) *Mirror {
 	return nil
 }
 
-// FindMirrorOf 查找匹配指定仓库 ID 的镜像
+// FindMirrorOf finds a mirror matching the specified repository ID
 func (s *Settings) FindMirrorOf(repositoryId string) *Mirror {
 	for i := range s.GetMirrors() {
 		mirror := &s.Mirrors.Mirror[i]
@@ -141,7 +141,7 @@ func (s *Settings) FindMirrorOf(repositoryId string) *Mirror {
 	return nil
 }
 
-// FindActiveProxy 查找第一个激活的代理
+// FindActiveProxy finds the first active proxy
 func (s *Settings) FindActiveProxy() *Proxy {
 	for i := range s.GetProxies() {
 		if s.Proxies.Proxy[i].Active {
@@ -151,17 +151,45 @@ func (s *Settings) FindActiveProxy() *Proxy {
 	return nil
 }
 
-// getMavenHome 获取 Maven Home 目录
+// GetPluginGroups returns the plugin group prefixes
+func (s *Settings) GetPluginGroups() []string {
+	if s.PluginGroups == nil {
+		return []string{}
+	}
+	return s.PluginGroups.PluginGroup
+}
+
+// GetLocalRepository returns the local repository path, or empty string if not set
+func (s *Settings) GetLocalRepository() string {
+	return s.LocalRepository
+}
+
+// IsOffline returns whether offline mode is enabled
+func (s *Settings) IsOffline() bool {
+	return s.Offline
+}
+
+// FindProfile finds a profile by ID
+func (s *Settings) FindProfile(id string) *SettingsProfile {
+	for i := range s.GetProfiles() {
+		if s.Profiles.Profile[i].Id == id {
+			return &s.Profiles.Profile[i]
+		}
+	}
+	return nil
+}
+
+// getMavenHome gets the Maven home directory
 func getMavenHome() string {
-	// 优先检查 M2_HOME
+	// Check M2_HOME first
 	if m2Home := os.Getenv("M2_HOME"); m2Home != "" {
 		return m2Home
 	}
-	// 然后检查 MAVEN_HOME
+	// Then check MAVEN_HOME
 	if mavenHome := os.Getenv("MAVEN_HOME"); mavenHome != "" {
 		return mavenHome
 	}
-	// 尝试常见安装路径
+	// Try common installation paths
 	switch runtime.GOOS {
 	case "linux":
 		candidates := []string{"/usr/share/maven", "/opt/maven", "/usr/local/maven"}

@@ -1,6 +1,6 @@
 package command
 
-// Wrapper 在项目中生成 Maven Wrapper 文件，使项目可以在没有安装 Maven 的情况下构建
+// Wrapper generates Maven Wrapper files in the project, allowing the project to be built without Maven installed
 func Wrapper(executable string) (string, error) {
 	return ExecForStdout(executable, "wrapper:wrapper")
 }

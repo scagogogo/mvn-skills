@@ -1,22 +1,22 @@
 package command
 
-// Surefire 相关命令
-// surefire 插件是 Maven 执行单元测试的标准插件
+// Surefire-related commands
+// The surefire plugin is the standard plugin for running unit tests in Maven
 
-// SurefireTest 直接调用 surefire:test 运行单元测试
-// 相比 Test() 生命周期阶段，直接调用 surefire 插件可以更精细地控制测试执行
+// SurefireTest directly invokes surefire:test to run unit tests
+// Compared to the Test() lifecycle phase, directly invoking the surefire plugin provides finer control over test execution
 func SurefireTest(executable string) (string, error) {
 	return ExecForStdout(executable, "surefire:test")
 }
 
-// SurefireTestSingleClass 运行单个测试类
-// className 格式为完全限定名，如 "com.example.MyTest"
+// SurefireTestSingleClass runs a single test class
+// The className format is a fully qualified name, e.g. "com.example.MyTest"
 func SurefireTestSingleClass(executable, className string) (string, error) {
 	return ExecForStdout(executable, "surefire:test", "-Dtest="+className)
 }
 
-// SurefireTestMethod 运行单个测试方法
-// methodSpec 格式为 "ClassName#methodName"
+// SurefireTestMethod runs a single test method
+// The methodSpec format is "ClassName#methodName"
 func SurefireTestMethod(executable, methodSpec string) (string, error) {
 	return ExecForStdout(executable, "surefire:test", "-Dtest="+methodSpec)
 }

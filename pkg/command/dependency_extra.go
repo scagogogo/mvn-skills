@@ -1,9 +1,9 @@
 package command
 
-// 依赖插件的额外命令
-// 补充 dependency.go 中已有的命令
+// Additional dependency plugin commands
+// Supplements the commands already in dependency.go
 
-// DependencyCopy 复制指定构件到目标目录（mvn dependency:copy）
+// DependencyCopy copies the specified artifact to the target directory (mvn dependency:copy)
 func DependencyCopy(executable, groupId, artifactId, version, outputDirectory string) (string, error) {
 	return ExecForStdout(executable,
 		"dependency:copy",
@@ -12,13 +12,13 @@ func DependencyCopy(executable, groupId, artifactId, version, outputDirectory st
 	)
 }
 
-// DependencyCopyDependencies 复制所有依赖到目标目录（mvn dependency:copy-dependencies）
-// 常用于创建分发包
+// DependencyCopyDependencies copies all dependencies to the target directory (mvn dependency:copy-dependencies)
+// Commonly used for creating distribution packages
 func DependencyCopyDependencies(executable, outputDirectory string) (string, error) {
 	return ExecForStdout(executable, "dependency:copy-dependencies", "-DoutputDirectory="+outputDirectory)
 }
 
-// DependencyUnpack 解压指定构件到目标目录（mvn dependency:unpack）
+// DependencyUnpack unpacks the specified artifact to the target directory (mvn dependency:unpack)
 func DependencyUnpack(executable, groupId, artifactId, version, outputDirectory string) (string, error) {
 	return ExecForStdout(executable,
 		"dependency:unpack",
@@ -27,8 +27,8 @@ func DependencyUnpack(executable, groupId, artifactId, version, outputDirectory 
 	)
 }
 
-// DependencyBuildClasspath 生成 classpath 字符串（mvn dependency:build-classpath）
-// 返回项目的完整 classpath，常用于脚本和 IDE 集成
+// DependencyBuildClasspath generates a classpath string (mvn dependency:build-classpath)
+// Returns the project's complete classpath, commonly used for scripts and IDE integration
 func DependencyBuildClasspath(executable string) (string, error) {
 	return ExecForStdout(executable, "dependency:build-classpath")
 }

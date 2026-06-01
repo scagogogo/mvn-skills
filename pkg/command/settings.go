@@ -1,6 +1,6 @@
 package command
 
-// GetLocalRepositoryDirectory 从命令获取本地仓库的位置
+// GetLocalRepositoryDirectory gets the local repository location from the command
 func GetLocalRepositoryDirectory(executable string) (string, error) {
 	return ExecForStdout(executable, "help:evaluate", "-Dexpression=settings.localRepository", "-q", "-DforceStdout")
 }

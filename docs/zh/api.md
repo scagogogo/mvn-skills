@@ -90,6 +90,31 @@ output, err := NewCommandBuilder().
 
 **构建器便捷方法：** `Clean()`, `Compile()`, `Test()`, `Package()`, `Install()`, `Deploy()`, `Verify()`
 
+> **不可变性：** 便捷方法不会修改原始 builder。每次调用创建一个副本并添加目标，
+> 原始 builder 保持可重用。
+
+#### 错误处理
+
+```go
+// MavenError 表示 Maven 命令执行失败
+type MavenError struct {
+    Command   string   // 完整命令（如 "mvn clean install"）
+    Args      []string // 命令参数
+    Stderr    string   // Maven 的 stderr 输出（截断至 500 字符）
+    ExitCode  int      // 进程退出码（如果可用）
+    Inner     error    // 原始错误
+}
+
+// ExecForStdout 失败时返回 *MavenError，包含 stderr 内容
+output, err := command.Clean("mvn")
+if err != nil {
+    var me *command.MavenError
+    if errors.As(err, &me) {
+        log.Printf("Maven stderr: %s", me.Stderr)
+    }
+}
+```
+
 #### 通用执行
 
 ```go
@@ -233,6 +258,14 @@ func (p *Project) GetModules() []string
 func (p *Project) GetPlugins() []Plugin
 func (p *Project) GetProfiles() []Profile
 func (p *Project) GetRepositories() []Repository
+func (p *Project) GetProperties() map[string]string
+func (p *Project) GetLicenses() []License
+func (p *Project) GetDevelopers() []Developer
+func (p *Project) GetScm() *Scm
+func (p *Project) GetBuild() *Build
+func (p *Project) GetPackaging() string  // 未指定时默认为 "jar"
+func (p *Project) GetProfiles() []Profile
+func (p *Project) GetRepositories() []Repository
 func (p *Project) IsMultiModule() bool
 func (p *Project) HasParent() bool
 func (p *Project) FindDependency(groupId, artifactId string) *Dependency
@@ -261,10 +294,14 @@ func (s *Settings) GetServers() []Server
 func (s *Settings) GetProxies() []Proxy
 func (s *Settings) GetProfiles() []SettingsProfile
 func (s *Settings) GetActiveProfileIds() []string
+func (s *Settings) GetPluginGroups() []string
+func (s *Settings) GetLocalRepository() string
+func (s *Settings) IsOffline() bool
 func (s *Settings) FindServer(id string) *Server
 func (s *Settings) FindMirror(id string) *Mirror
 func (s *Settings) FindMirrorOf(repositoryId string) *Mirror
 func (s *Settings) FindActiveProxy() *Proxy
+func (s *Settings) FindProfile(id string) *SettingsProfile
 ```
 
 **核心类型：** `Settings`, `Server`, `Mirror`, `Proxy`, `SettingsProfile`, `SettingsActivation`
