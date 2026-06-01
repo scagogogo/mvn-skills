@@ -23,7 +23,7 @@ func FindMaven() (string, error) {
 	envNameSlice := []string{"M2_HOME", "MAVEN_HOME"}
 	for _, envName := range envNameSlice {
 		getenv := os.Getenv(envName)
-		if envName == "" {
+		if getenv == "" {
 			continue
 		}
 		if Check(getenv) {

@@ -14,6 +14,9 @@ func Exec(options *Options) error {
 	}
 
 	command := exec.Command(options.Executable, options.Args...)
+	if options.WorkingDirectory != "" {
+		command.Dir = options.WorkingDirectory
+	}
 	if options.Stdout != nil {
 		command.Stdout = options.Stdout
 	}

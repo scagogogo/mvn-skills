@@ -59,11 +59,25 @@ func FindDirectory(localRepositoryDirectory string, groupId, artifactId, version
 
 // FindJar 在本地仓库中寻找给定的GAV的Jar包
 func FindJar(localRepositoryDirectory string, groupId, artifactId, version string) (string, error) {
+	return FindJarWithClassifier(localRepositoryDirectory, groupId, artifactId, version, "")
+}
+
+// FindJarWithClassifier 在本地仓库中寻找给定的GAV和classifier的Jar包
+// classifier 为空字符串时等同于 FindJar，查找主构件
+// classifier 非空时查找带 classifier 的构件，如 "sources"、"javadoc"
+func FindJarWithClassifier(localRepositoryDirectory string, groupId, artifactId, version, classifier string) (string, error) {
 	directory, err := FindDirectory(localRepositoryDirectory, groupId, artifactId, version)
 	if err != nil {
 		return "", err
 	}
-	jarPath := filepath.Join(directory, fmt.Sprintf("%s-%s.jar", artifactId, version))
+
+	var jarPath string
+	if classifier == "" {
+		jarPath = filepath.Join(directory, fmt.Sprintf("%s-%s.jar", artifactId, version))
+	} else {
+		jarPath = filepath.Join(directory, fmt.Sprintf("%s-%s-%s.jar", artifactId, version, classifier))
+	}
+
 	stat, err := os.Stat(jarPath)
 	if err != nil {
 		return "", err
