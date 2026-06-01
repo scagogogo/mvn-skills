@@ -12,35 +12,34 @@ import (
 	"strings"
 )
 
-// InstallWindows 在Windows系统上安装Maven
+// InstallWindows installs Maven on Windows systems
 func InstallWindows() (string, error) {
-	// Maven下载地址
 	mavenURL := "https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.zip"
-	// 安装目录
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("获取用户主目录失败: %w", err)
+		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
 
-	// 创建安装目录
+	// Create installation directory
 	mavenDir := filepath.Join(homeDir, ".m2", "maven")
 	if err := os.MkdirAll(mavenDir, 0755); err != nil {
-		return "", fmt.Errorf("创建Maven安装目录失败: %w", err)
+		return "", fmt.Errorf("failed to create Maven installation directory: %w", err)
 	}
 
-	// 下载Maven
+	// Download Maven
 	zipPath := filepath.Join(mavenDir, "maven.zip")
 	if err := downloadFileWindows(mavenURL, zipPath); err != nil {
-		return "", fmt.Errorf("下载Maven失败: %w", err)
+		return "", fmt.Errorf("failed to download Maven: %w", err)
 	}
 
-	// 解压Maven
+	// Extract Maven
 	extractDir := filepath.Join(mavenDir, "maven-install")
 	if err := unzipWindows(zipPath, extractDir); err != nil {
-		return "", fmt.Errorf("解压Maven失败: %w", err)
+		return "", fmt.Errorf("failed to extract Maven: %w", err)
 	}
 
-	// 查找解压后的目录
+	// Find the extracted directory
 	mavenHome := ""
 	err = filepath.Walk(extractDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -53,31 +52,31 @@ func InstallWindows() (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", fmt.Errorf("查找Maven目录失败: %w", err)
+		return "", fmt.Errorf("failed to find Maven directory: %w", err)
 	}
 
 	if mavenHome == "" {
-		return "", errors.New("找不到Maven安装目录")
+		return "", errors.New("Maven installation directory not found")
 	}
 
-	// 确保bin目录存在
+	// Ensure bin directory exists
 	binDir := filepath.Join(mavenHome, "bin")
 	if _, err := os.Stat(binDir); os.IsNotExist(err) {
-		return "", errors.New("Maven安装不完整，找不到bin目录")
+		return "", errors.New("Maven installation incomplete, bin directory not found")
 	}
 
-	// 设置环境变量
+	// Set environment variables
 	if err := setEnvVarsWindows(mavenHome); err != nil {
-		return "", fmt.Errorf("设置环境变量失败: %w", err)
+		return "", fmt.Errorf("failed to set environment variables: %w", err)
 	}
 
-	// 删除临时zip文件
+	// Remove temporary zip file
 	os.Remove(zipPath)
 
 	return mavenHome, nil
 }
 
-// 下载文件
+// downloadFileWindows downloads a file from the given URL
 func downloadFileWindows(url, destPath string) error {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -86,7 +85,7 @@ func downloadFileWindows(url, destPath string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("下载失败，HTTP状态码: %d", resp.StatusCode)
+		return fmt.Errorf("download failed, HTTP status code: %d", resp.StatusCode)
 	}
 
 	file, err := os.Create(destPath)
@@ -99,7 +98,7 @@ func downloadFileWindows(url, destPath string) error {
 	return err
 }
 
-// 解压zip文件
+// unzipWindows extracts a zip archive
 func unzipWindows(zipPath, destDir string) error {
 	r, err := zip.OpenReader(zipPath)
 	if err != nil {
@@ -107,7 +106,6 @@ func unzipWindows(zipPath, destDir string) error {
 	}
 	defer r.Close()
 
-	// 创建目标目录
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return err
 	}
@@ -115,9 +113,9 @@ func unzipWindows(zipPath, destDir string) error {
 	for _, f := range r.File {
 		fpath := filepath.Join(destDir, f.Name)
 
-		// 检查路径穿越漏洞
+		// Check for path traversal vulnerability
 		if !strings.HasPrefix(fpath, filepath.Clean(destDir)+string(os.PathSeparator)) {
-			return fmt.Errorf("非法的文件路径: %s", fpath)
+			return fmt.Errorf("illegal file path: %s", fpath)
 		}
 
 		if f.FileInfo().IsDir() {
@@ -152,9 +150,8 @@ func unzipWindows(zipPath, destDir string) error {
 	return nil
 }
 
-// 设置环境变量
+// setEnvVarsWindows configures persistent environment variables using SETX
 func setEnvVarsWindows(mavenHome string) error {
-	// Windows上使用SETX命令持久化环境变量
 	cmds := []struct {
 		name string
 		args []string
@@ -166,7 +163,7 @@ func setEnvVarsWindows(mavenHome string) error {
 	for _, cmd := range cmds {
 		c := exec.Command(cmd.name, cmd.args...)
 		if err := c.Run(); err != nil {
-			return fmt.Errorf("执行命令 %s %v 失败: %w", cmd.name, cmd.args, err)
+			return fmt.Errorf("failed to execute %s %v: %w", cmd.name, cmd.args, err)
 		}
 	}
 

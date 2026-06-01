@@ -186,3 +186,48 @@ func TestCommandBuilder_ChainedUsage(t *testing.T) {
 	assert.Contains(t, argsStr, "clean")
 	assert.Contains(t, argsStr, "deploy")
 }
+
+func TestCommandBuilder_NoMutation(t *testing.T) {
+	// 验证便捷方法不修改原始 builder
+	builder := NewCommandBuilder().
+		WithExecutable("mvn").
+		WithBatchMode().
+		WithGoal("existing-goal")
+
+	// 记录原始 goals
+	originalArgs := builder.buildArgs()
+	originalStr := strings.Join(originalArgs, " ")
+	assert.Contains(t, originalStr, "existing-goal")
+	assert.NotContains(t, originalStr, "clean")
+
+	// 调用 Clean 便捷方法（会失败因为没有 mvn，但我们只关心不修改 builder）
+	builder.Clean()
+
+	// 验证原始 builder 没有被修改
+	afterArgs := builder.buildArgs()
+	afterStr := strings.Join(afterArgs, " ")
+	assert.Equal(t, originalStr, afterStr, "builder should not be mutated by convenience methods")
+	assert.NotContains(t, afterStr, "clean")
+}
+
+func TestCommandBuilder_ConsecutiveCalls(t *testing.T) {
+	// 验证连续调用便捷方法不会累积目标
+	builder := NewCommandBuilder().WithExecutable("mvn").WithGoal("base")
+
+	// 第一次调用
+	args1 := builder.withGoal("clean").buildArgs()
+	assert.Contains(t, strings.Join(args1, " "), "clean")
+	assert.NotContains(t, strings.Join(args1, " "), "compile")
+
+	// 第二次调用
+	args2 := builder.withGoal("compile").buildArgs()
+	assert.Contains(t, strings.Join(args2, " "), "compile")
+	assert.NotContains(t, strings.Join(args2, " "), "clean")
+
+	// 原始 builder 没变
+	originalArgs := builder.buildArgs()
+	originalStr := strings.Join(originalArgs, " ")
+	assert.Contains(t, originalStr, "base")
+	assert.NotContains(t, originalStr, "clean")
+	assert.NotContains(t, originalStr, "compile")
+}

@@ -6,17 +6,17 @@ import (
 	"path/filepath"
 )
 
-// 可测试版本的下载安装函数配置
+// InstallOptions holds configurable options for Maven installation
 type InstallOptions struct {
-	// Maven下载URL
+	// MavenURL is the download URL for the Maven binary archive
 	MavenURL string
-	// 用户目录（如果为空则使用真实的用户目录）
+	// HomeDir is the user home directory (defaults to real home directory if empty)
 	HomeDir string
-	// 是否跳过环境变量设置（测试时通常设为true）
+	// SkipEnvSetup skips environment variable configuration (useful for testing)
 	SkipEnvSetup bool
 }
 
-// 默认的安装选项
+// DefaultInstallOptions returns the default installation options
 func DefaultInstallOptions() InstallOptions {
 	return InstallOptions{
 		MavenURL:     "https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz",
@@ -25,38 +25,38 @@ func DefaultInstallOptions() InstallOptions {
 	}
 }
 
-// 使用可配置选项安装Maven（macOS版本）
-// 此函数供测试使用，允许注入依赖
+// InstallMacOSWithOptions installs Maven on macOS with configurable options
+// This function is designed for testing, allowing dependency injection
 func InstallMacOSWithOptions(options InstallOptions) (string, error) {
-	// 确定用户目录
+	// Determine home directory
 	homeDir := options.HomeDir
 	if homeDir == "" {
 		var err error
 		homeDir, err = os.UserHomeDir()
 		if err != nil {
-			return "", fmt.Errorf("获取用户主目录失败: %w", err)
+			return "", fmt.Errorf("failed to get user home directory: %w", err)
 		}
 	}
 
-	// 创建安装目录
+	// Create installation directory
 	mavenDir := filepath.Join(homeDir, ".m2", "maven")
 	if err := os.MkdirAll(mavenDir, 0755); err != nil {
-		return "", fmt.Errorf("创建Maven安装目录失败: %w", err)
+		return "", fmt.Errorf("failed to create Maven installation directory: %w", err)
 	}
 
-	// 下载Maven
+	// Download Maven
 	tarPath := filepath.Join(mavenDir, "maven.tar.gz")
 	if err := downloadFile(options.MavenURL, tarPath); err != nil {
-		return "", fmt.Errorf("下载Maven失败: %w", err)
+		return "", fmt.Errorf("failed to download Maven: %w", err)
 	}
 
-	// 解压Maven
+	// Extract Maven
 	extractDir := filepath.Join(mavenDir, "maven-install")
 	if err := untar(tarPath, extractDir); err != nil {
-		return "", fmt.Errorf("解压Maven失败: %w", err)
+		return "", fmt.Errorf("failed to extract Maven: %w", err)
 	}
 
-	// 查找解压后的目录
+	// Find the extracted directory
 	mavenHome := ""
 	err := filepath.Walk(extractDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -69,27 +69,27 @@ func InstallMacOSWithOptions(options InstallOptions) (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", fmt.Errorf("查找Maven目录失败: %w", err)
+		return "", fmt.Errorf("failed to find Maven directory: %w", err)
 	}
 
 	if mavenHome == "" {
-		return "", fmt.Errorf("找不到Maven安装目录")
+		return "", fmt.Errorf("Maven installation directory not found")
 	}
 
-	// 确保bin目录存在
+	// Ensure bin directory exists
 	binDir := filepath.Join(mavenHome, "bin")
 	if _, err := os.Stat(binDir); os.IsNotExist(err) {
-		return "", fmt.Errorf("Maven安装不完整，找不到bin目录")
+		return "", fmt.Errorf("Maven installation incomplete, bin directory not found")
 	}
 
-	// 设置环境变量（可跳过）
+	// Set environment variables (can be skipped)
 	if !options.SkipEnvSetup {
 		if err := setMacOSEnvironmentVars(mavenHome); err != nil {
-			return "", fmt.Errorf("设置环境变量失败: %w", err)
+			return "", fmt.Errorf("failed to set environment variables: %w", err)
 		}
 	}
 
-	// 清理临时文件
+	// Clean up temporary file
 	os.Remove(tarPath)
 
 	return mavenHome, nil

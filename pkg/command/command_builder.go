@@ -444,45 +444,48 @@ func (b *CommandBuilder) RunForStdout() (string, error) {
 }
 
 // 便捷方法：使用 builder 执行常用生命周期阶段
+// 这些方法不会修改原始 builder，而是创建副本并添加目标
+
+// withGoal 创建一个副本并添加目标，不修改原始 builder
+func (b *CommandBuilder) withGoal(goal string) *CommandBuilder {
+	copy := *b // 浅拷贝
+	copy.goals = append([]string{}, b.goals...) // 深拷贝 goals 列表
+	copy.goals = append(copy.goals, goal)
+	return &copy
+}
 
 // Clean 清理构建产物
 func (b *CommandBuilder) Clean() (string, error) {
-	b.goals = append(b.goals, "clean")
-	return b.RunForStdout()
+	return b.withGoal("clean").RunForStdout()
 }
 
 // Compile 编译源码
 func (b *CommandBuilder) Compile() (string, error) {
-	b.goals = append(b.goals, "compile")
-	return b.RunForStdout()
+	return b.withGoal("compile").RunForStdout()
 }
 
 // Test 运行测试
 func (b *CommandBuilder) Test() (string, error) {
-	b.goals = append(b.goals, "test")
-	return b.RunForStdout()
+	return b.withGoal("test").RunForStdout()
 }
 
 // Package 打包
 func (b *CommandBuilder) Package() (string, error) {
-	b.goals = append(b.goals, "package")
-	return b.RunForStdout()
+	return b.withGoal("package").RunForStdout()
 }
 
-// Install 安装到本地仓库
+// Install 安装到本地仓库（执行 mvn install，不带 clean）
+// 注意：如果需要执行 clean install，使用 WithGoals("clean", "install").RunForStdout()
 func (b *CommandBuilder) Install() (string, error) {
-	b.goals = append(b.goals, "install")
-	return b.RunForStdout()
+	return b.withGoal("install").RunForStdout()
 }
 
 // Deploy 部署到远程仓库
 func (b *CommandBuilder) Deploy() (string, error) {
-	b.goals = append(b.goals, "deploy")
-	return b.RunForStdout()
+	return b.withGoal("deploy").RunForStdout()
 }
 
 // Verify 验证
 func (b *CommandBuilder) Verify() (string, error) {
-	b.goals = append(b.goals, "verify")
-	return b.RunForStdout()
+	return b.withGoal("verify").RunForStdout()
 }

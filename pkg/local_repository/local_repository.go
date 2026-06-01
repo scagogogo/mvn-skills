@@ -3,7 +3,6 @@ package local_repository
 import (
 	"errors"
 	"fmt"
-	"github.com/mitchellh/go-homedir"
 	"github.com/scagogogo/mvn-sdk/pkg/command"
 	"os"
 	"path/filepath"
@@ -18,11 +17,11 @@ import (
 var DefaultLocalRepositoryDirectory string
 
 func init() {
-	dir, err := homedir.Dir()
+	dir, err := os.UserHomeDir()
 	if err != nil {
 		return
 	}
-	DefaultLocalRepositoryDirectory = filepath.Join(dir, ".m2/repository/")
+	DefaultLocalRepositoryDirectory = filepath.Join(dir, ".m2", "repository")
 }
 
 // ParseLocalRepositoryDirectory 解析本地仓库的位置

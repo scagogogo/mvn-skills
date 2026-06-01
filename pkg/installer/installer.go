@@ -13,9 +13,7 @@ import (
 	"strings"
 )
 
-// 用于为本机安装maven
-
-// Install 根据当前操作系统选择合适的安装方法
+// Install selects the appropriate installation method based on the current operating system
 func Install() (string, error) {
 	switch runtime.GOOS {
 	case "windows":
@@ -25,51 +23,54 @@ func Install() (string, error) {
 	case "darwin":
 		return InstallMacOS()
 	default:
-		return "", fmt.Errorf("暂不支持当前操作系统: %s", runtime.GOOS)
+		return "", fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
 }
 
-// 下载文件（通用函数）
+// downloadFile downloads a file from the given URL to the specified destination path
 func downloadFile(url, destPath string) error {
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to download from %s: %w", url, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("下载失败，HTTP状态码: %d", resp.StatusCode)
+		return fmt.Errorf("download failed, HTTP status code: %d", resp.StatusCode)
 	}
 
 	file, err := os.Create(destPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create destination file: %w", err)
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, resp.Body)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to write downloaded content: %w", err)
+	}
+	return nil
 }
 
-// 解压tar.gz文件
+// untar extracts a tar.gz archive to the specified destination directory
 func untar(tarPath, destDir string) error {
 	file, err := os.Open(tarPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open tar file: %w", err)
 	}
 	defer file.Close()
 
 	gzr, err := gzip.NewReader(file)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create gzip reader: %w", err)
 	}
 	defer gzr.Close()
 
 	tr := tar.NewReader(gzr)
 
-	// 创建目标目录
+	// Create destination directory
 	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return err
+		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
 	for {
@@ -78,35 +79,35 @@ func untar(tarPath, destDir string) error {
 			break
 		}
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to read tar entry: %w", err)
 		}
 
 		path := filepath.Join(destDir, header.Name)
 
-		// 检查路径穿越漏洞
+		// Check for path traversal vulnerability
 		if !strings.HasPrefix(path, filepath.Clean(destDir)+string(os.PathSeparator)) {
-			return fmt.Errorf("非法的文件路径: %s", path)
+			return fmt.Errorf("illegal file path: %s", path)
 		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if err := os.MkdirAll(path, 0755); err != nil {
-				return err
+				return fmt.Errorf("failed to create directory: %w", err)
 			}
 		case tar.TypeReg:
 			dir := filepath.Dir(path)
 			if err := os.MkdirAll(dir, 0755); err != nil {
-				return err
+				return fmt.Errorf("failed to create parent directory: %w", err)
 			}
 
 			outFile, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to create file: %w", err)
 			}
 
 			if _, err := io.Copy(outFile, tr); err != nil {
 				outFile.Close()
-				return err
+				return fmt.Errorf("failed to write file: %w", err)
 			}
 			outFile.Close()
 		}
@@ -115,33 +116,33 @@ func untar(tarPath, destDir string) error {
 	return nil
 }
 
-// 从tar.gz包安装Maven的通用函数
+// installFromTarGz installs Maven from a tar.gz archive
 func installFromTarGz(mavenURL string) (string, error) {
-	// 安装目录
+	// Get home directory
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("获取用户主目录失败: %w", err)
+		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
 
-	// 创建安装目录
+	// Create installation directory
 	mavenDir := filepath.Join(homeDir, ".m2", "maven")
 	if err := os.MkdirAll(mavenDir, 0755); err != nil {
-		return "", fmt.Errorf("创建Maven安装目录失败: %w", err)
+		return "", fmt.Errorf("failed to create Maven installation directory: %w", err)
 	}
 
-	// 下载Maven
+	// Download Maven
 	tarPath := filepath.Join(mavenDir, "maven.tar.gz")
 	if err := downloadFile(mavenURL, tarPath); err != nil {
-		return "", fmt.Errorf("下载Maven失败: %w", err)
+		return "", fmt.Errorf("failed to download Maven: %w", err)
 	}
 
-	// 解压Maven
+	// Extract Maven
 	extractDir := filepath.Join(mavenDir, "maven-install")
 	if err := untar(tarPath, extractDir); err != nil {
-		return "", fmt.Errorf("解压Maven失败: %w", err)
+		return "", fmt.Errorf("failed to extract Maven: %w", err)
 	}
 
-	// 查找解压后的目录
+	// Find the extracted directory
 	mavenHome := ""
 	err = filepath.Walk(extractDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -154,20 +155,20 @@ func installFromTarGz(mavenURL string) (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", fmt.Errorf("查找Maven目录失败: %w", err)
+		return "", fmt.Errorf("failed to find Maven directory: %w", err)
 	}
 
 	if mavenHome == "" {
-		return "", errors.New("找不到Maven安装目录")
+		return "", errors.New("Maven installation directory not found")
 	}
 
-	// 确保bin目录存在
+	// Ensure bin directory exists
 	binDir := filepath.Join(mavenHome, "bin")
 	if _, err := os.Stat(binDir); os.IsNotExist(err) {
-		return "", errors.New("Maven安装不完整，找不到bin目录")
+		return "", errors.New("Maven installation incomplete, bin directory not found")
 	}
 
-	// 删除临时文件
+	// Remove temporary file
 	os.Remove(tarPath)
 
 	return mavenHome, nil

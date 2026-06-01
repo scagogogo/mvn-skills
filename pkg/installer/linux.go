@@ -13,47 +13,42 @@ import (
 	"strings"
 )
 
-// InstallLinux 在Linux系统上安装Maven
+// InstallLinux installs Maven on Linux systems
 func InstallLinux() (string, error) {
-	// 尝试使用包管理器安装
+	// Try package manager first
 	if installed, path := tryPackageManagerLinux(); installed {
 		return path, nil
 	}
 
-	// 如果包管理器安装失败，则使用二进制包安装
+	// Fall back to binary installation
 	return installFromBinaryLinux()
 }
 
-// 尝试使用包管理器安装
+// tryPackageManagerLinux attempts to install Maven via system package manager
 func tryPackageManagerLinux() (bool, string) {
-	// 检测系统类型
 	if _, err := os.Stat("/etc/debian_version"); err == nil {
-		// Debian/Ubuntu系统
+		// Debian/Ubuntu
 		cmd := exec.Command("sudo", "apt-get", "update")
 		cmd.Run()
 
 		cmd = exec.Command("sudo", "apt-get", "install", "-y", "maven")
 		if err := cmd.Run(); err == nil {
-			// 安装成功，查找安装路径
 			cmd = exec.Command("which", "mvn")
 			output, err := cmd.Output()
 			if err == nil && len(output) > 0 {
 				mvnPath := strings.TrimSpace(string(output))
-				// 获取MAVEN_HOME
 				mavenHome := filepath.Dir(filepath.Dir(mvnPath))
 				return true, mavenHome
 			}
 		}
 	} else if _, err := os.Stat("/etc/redhat-release"); err == nil {
-		// RedHat/CentOS/Fedora系统
+		// RedHat/CentOS/Fedora
 		cmd := exec.Command("sudo", "yum", "install", "-y", "maven")
 		if err := cmd.Run(); err == nil {
-			// 安装成功，查找安装路径
 			cmd = exec.Command("which", "mvn")
 			output, err := cmd.Output()
 			if err == nil && len(output) > 0 {
 				mvnPath := strings.TrimSpace(string(output))
-				// 获取MAVEN_HOME
 				mavenHome := filepath.Dir(filepath.Dir(mvnPath))
 				return true, mavenHome
 			}
@@ -63,35 +58,33 @@ func tryPackageManagerLinux() (bool, string) {
 	return false, ""
 }
 
-// 从二进制包安装
+// installFromBinaryLinux installs Maven from a binary tar.gz archive
 func installFromBinaryLinux() (string, error) {
-	// Maven下载地址
 	mavenURL := "https://archive.apache.org/dist/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz"
-	// 安装目录
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("获取用户主目录失败: %w", err)
+		return "", fmt.Errorf("failed to get user home directory: %w", err)
 	}
 
-	// 创建安装目录
 	mavenDir := filepath.Join(homeDir, ".m2", "maven")
 	if err := os.MkdirAll(mavenDir, 0755); err != nil {
-		return "", fmt.Errorf("创建Maven安装目录失败: %w", err)
+		return "", fmt.Errorf("failed to create Maven installation directory: %w", err)
 	}
 
-	// 下载Maven
+	// Download Maven
 	tarPath := filepath.Join(mavenDir, "maven.tar.gz")
 	if err := downloadFileLinux(mavenURL, tarPath); err != nil {
-		return "", fmt.Errorf("下载Maven失败: %w", err)
+		return "", fmt.Errorf("failed to download Maven: %w", err)
 	}
 
-	// 解压Maven
+	// Extract Maven
 	extractDir := filepath.Join(mavenDir, "maven-install")
 	if err := untarLinux(tarPath, extractDir); err != nil {
-		return "", fmt.Errorf("解压Maven失败: %w", err)
+		return "", fmt.Errorf("failed to extract Maven: %w", err)
 	}
 
-	// 查找解压后的目录
+	// Find the extracted directory
 	mavenHome := ""
 	err = filepath.Walk(extractDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -104,31 +97,31 @@ func installFromBinaryLinux() (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", fmt.Errorf("查找Maven目录失败: %w", err)
+		return "", fmt.Errorf("failed to find Maven directory: %w", err)
 	}
 
 	if mavenHome == "" {
-		return "", errors.New("找不到Maven安装目录")
+		return "", errors.New("Maven installation directory not found")
 	}
 
-	// 确保bin目录存在
+	// Ensure bin directory exists
 	binDir := filepath.Join(mavenHome, "bin")
 	if _, err := os.Stat(binDir); os.IsNotExist(err) {
-		return "", errors.New("Maven安装不完整，找不到bin目录")
+		return "", errors.New("Maven installation incomplete, bin directory not found")
 	}
 
-	// 设置环境变量
+	// Set environment variables
 	if err := setEnvironmentVarsLinux(mavenHome); err != nil {
-		return "", fmt.Errorf("设置环境变量失败: %w", err)
+		return "", fmt.Errorf("failed to set environment variables: %w", err)
 	}
 
-	// 删除临时文件
+	// Remove temporary file
 	os.Remove(tarPath)
 
 	return mavenHome, nil
 }
 
-// 下载文件
+// downloadFileLinux downloads a file from the given URL
 func downloadFileLinux(url, destPath string) error {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -137,7 +130,7 @@ func downloadFileLinux(url, destPath string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("下载失败，HTTP状态码: %d", resp.StatusCode)
+		return fmt.Errorf("download failed, HTTP status code: %d", resp.StatusCode)
 	}
 
 	file, err := os.Create(destPath)
@@ -150,7 +143,7 @@ func downloadFileLinux(url, destPath string) error {
 	return err
 }
 
-// 解压tar.gz文件
+// untarLinux extracts a tar.gz archive
 func untarLinux(tarPath, destDir string) error {
 	file, err := os.Open(tarPath)
 	if err != nil {
@@ -166,7 +159,6 @@ func untarLinux(tarPath, destDir string) error {
 
 	tr := tar.NewReader(gzr)
 
-	// 创建目标目录
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return err
 	}
@@ -182,9 +174,9 @@ func untarLinux(tarPath, destDir string) error {
 
 		path := filepath.Join(destDir, header.Name)
 
-		// 检查路径穿越漏洞
+		// Check for path traversal vulnerability
 		if !strings.HasPrefix(path, filepath.Clean(destDir)+string(os.PathSeparator)) {
-			return fmt.Errorf("非法的文件路径: %s", path)
+			return fmt.Errorf("illegal file path: %s", path)
 		}
 
 		switch header.Typeflag {
@@ -214,36 +206,33 @@ func untarLinux(tarPath, destDir string) error {
 	return nil
 }
 
-// 设置环境变量
+// setEnvironmentVarsLinux configures environment variables in shell rc file
 func setEnvironmentVarsLinux(mavenHome string) error {
-	// 向.bashrc或.zshrc写入环境变量
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
 
-	// 检查用户使用的shell
+	// Detect user's shell
 	var rcFile string
 	shell := os.Getenv("SHELL")
 	if strings.Contains(shell, "zsh") {
 		rcFile = filepath.Join(homeDir, ".zshrc")
 	} else {
-		// 默认使用bash
 		rcFile = filepath.Join(homeDir, ".bashrc")
 	}
 
-	// 读取现有文件内容
+	// Read existing file content
 	content, err := os.ReadFile(rcFile)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
-	// 构建新的环境变量设置
-	envVars := fmt.Sprintf("\n# Maven环境变量\nexport MAVEN_HOME=%s\nexport PATH=$PATH:$MAVEN_HOME/bin\n", mavenHome)
+	// Build environment variable entries
+	envVars := fmt.Sprintf("\n# Maven environment variables\nexport MAVEN_HOME=%s\nexport PATH=$PATH:$MAVEN_HOME/bin\n", mavenHome)
 
-	// 检查是否已经有这些设置
+	// Append only if not already configured
 	if !strings.Contains(string(content), "MAVEN_HOME=") {
-		// 追加到文件
 		f, err := os.OpenFile(rcFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			return err
@@ -255,7 +244,7 @@ func setEnvironmentVarsLinux(mavenHome string) error {
 		}
 	}
 
-	fmt.Println("Maven环境变量已设置，请运行 'source " + rcFile + "' 或重新打开终端使其生效")
+	fmt.Println("Maven environment variables configured. Run 'source " + rcFile + "' or restart your terminal to apply.")
 
 	return nil
 }
