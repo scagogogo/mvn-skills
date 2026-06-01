@@ -6,278 +6,381 @@
 
 ### Finder
 
-Finder 包用于查找本机已安装的 Maven 可执行文件。
+Finder 包用于查找 Maven 可执行文件，包括系统安装的 Maven 和 Maven Wrapper。
 
 ```go
 package finder
 
-// FindMaven 查找本机已安装的 Maven 可执行文件。
-// 先检查系统 PATH，然后检查 M2_HOME 和 MAVEN_HOME 环境变量。
-// 找不到时返回 ErrNotFoundMaven。
+// FindMaven 查找本机已安装的 Maven（PATH / M2_HOME / MAVEN_HOME）
 func FindMaven() (string, error)
 
 // Check 检查给定目录是否包含有效的 Maven 安装
-// 通过检查是否存在 bin/mvn 可执行文件来判断。
 func Check(mavenHomeDirectory string) bool
 
-// ErrNotFoundMaven 未找到 Maven 时返回的错误
+// FindMavenWrapper 在项目目录中查找 Maven Wrapper（mvnw/mvnw.cmd）
+func FindMavenWrapper(projectDir string) (string, error)
+
+// FindBestMaven 查找最合适的 Maven：优先使用项目 Wrapper，否则回退到系统 Maven
+func FindBestMaven(projectDir string) (string, error)
+
+// HasMavenWrapper 检查项目目录中是否存在 Maven Wrapper
+func HasMavenWrapper(projectDir string) bool
+
 var ErrNotFoundMaven error
+var ErrNotFoundMavenWrapper error
 ```
 
 ### Command
 
-Command 包提供了执行 Maven 命令的功能。
+Command 包提供了全面的 Maven 命令执行功能。
 
-#### 通用执行
+#### 命令构建器（推荐）
+
+构建器模式提供流式、可组合的 API 来构建 Maven 命令：
 
 ```go
 package command
 
-// Options 保存 Maven 命令执行的配置
+// 创建带常用 CI 设置的构建器
+output, err := NewCommandBuilder().
+    WithExecutable("mvn").
+    WithWorkingDirectory("/path/to/project").
+    WithBatchMode().           // -B：非交互模式，CI 必需
+    WithNoTransferProgress().  // -ntp：更干净的 CI 日志
+    WithProfiles("ci").        // -P ci
+    WithSkipTests().           // -DskipTests
+    WithUpdateSnapshots().     // -U
+    Clean()                    // 执行 "mvn -B -ntp -P ci -DskipTests -U clean"
+```
+
+**构建器选项：**
+
+| 方法 | CLI 标志 | 说明 |
+|------|---------|------|
+| `WithExecutable(path)` | — | 设置 mvn 可执行文件路径 |
+| `WithWorkingDirectory(dir)` | — | 设置工作目录 |
+| `WithPomFile(path)` | `-f` | 指定 POM 文件 |
+| `WithSettingsFile(path)` | `-s` | 指定用户 settings.xml |
+| `WithGlobalSettings(path)` | `-gs` | 指定全局 settings.xml |
+| `WithToolchains(path)` | `-t` | 指定 toolchains 文件 |
+| `WithProfiles(...)` | `-P` | 激活 Profile |
+| `WithProperty(k, v)` | `-Dk=v` | 设置系统属性 |
+| `WithProperties(map)` | `-Dk=v` | 批量设置属性 |
+| `WithProjects(...)` | `-pl` | 构建指定模块 |
+| `WithAlsoMake()` | `-am` | 同时构建依赖模块 |
+| `WithAlsoMakeDependents()` | `-amd` | 同时构建被依赖模块 |
+| `WithOffline()` | `-o` | 离线模式 |
+| `WithBatchMode()` | `-B` | 非交互/批处理模式 |
+| `WithUpdateSnapshots()` | `-U` | 强制更新 SNAPSHOT |
+| `WithSkipTests()` | `-DskipTests` | 跳过测试执行 |
+| `WithSkipTestsCompletely()` | `-Dmaven.test.skip=true` | 完全跳过测试 |
+| `WithErrors()` | `-e` | 显示完整错误堆栈 |
+| `WithDebug()` | `-X` | 调试输出 |
+| `WithQuiet()` | `-q` | 安静模式 |
+| `WithThreads(n)` | `-T n` | 并行构建 |
+| `WithNonRecursive()` | `-N` | 不递归构建子模块 |
+| `WithResumeFrom(module)` | `-rf` | 从指定模块恢复构建 |
+| `WithFailAtEnd()` | `-fae` | 失败时继续，最后报错 |
+| `WithFailNever()` | `-fn` | 永不报错 |
+| `WithFailFast()` | `-ff` | 快速失败（默认行为） |
+| `WithNoTransferProgress()` | `-ntp` | 不显示下载进度 |
+| `WithStrictChecksums()` | `-C` | 校验和不匹配则失败 |
+| `WithLaxChecksums()` | `-c` | 校验和不匹配则警告 |
+| `WithShowVersion()` | `-V` | 显示版本但不停止 |
+
+**构建器便捷方法：** `Clean()`, `Compile()`, `Test()`, `Package()`, `Install()`, `Deploy()`, `Verify()`
+
+#### 通用执行
+
+```go
 type Options struct {
-    Executable       string      // mvn 可执行文件路径（默认为 "mvn"）
-    Args             []string    // 传递给 mvn 的参数
-    WorkingDirectory string      // 命令的工作目录
-    Stdin            io.Reader   // 标准输入
-    Stdout           io.Writer   // 标准输出
-    Stderr           io.Writer   // 标准错误
+    Executable       string
+    Args             []string
+    WorkingDirectory string
+    Stdin            io.Reader
+    Stdout           io.Writer
+    Stderr           io.Writer
 }
 
-// Exec 使用给定的选项执行 Maven 命令
 func Exec(options *Options) error
-
-// ExecForStdout 执行 Maven 命令并返回其标准输出
 func ExecForStdout(executable string, args ...string) (string, error)
-
-// BuildExecutable 根据 MAVEN_HOME 目录构造 mvn 可执行文件路径
 func BuildExecutable(mavenHomeDirectory string) string
 ```
 
 #### 生命周期阶段
 
 ```go
-// Clean 清理项目构建产物，删除 target 目录（mvn clean）
-func Clean(executable string) (string, error)
+// 常用阶段
+func Clean(executable string) (string, error)          // mvn clean
+func Compile(executable string) (string, error)         // mvn compile
+func Test(executable string) (string, error)            // mvn test
+func TestCompile(executable string) (string, error)     // mvn test-compile
+func Package(executable string) (string, error)         // mvn package
+func Verify(executable string) (string, error)          // mvn verify
+func Deploy(executable string) (string, error)          // mvn deploy
+func Site(executable string) (string, error)            // mvn site
+func Validate(executable string) (string, error)        // mvn validate
+func Install(executable string) (string, error)         // mvn clean install
+func StandaloneInstall(executable string) (string, error) // mvn install（不带 clean）
 
-// Compile 编译项目源码（mvn compile）
-func Compile(executable string) (string, error)
-
-// Test 运行项目单元测试（mvn test）
-func Test(executable string) (string, error)
-
-// TestCompile 编译项目测试源码（mvn test-compile）
-func TestCompile(executable string) (string, error)
-
-// Package 将编译后的代码打包（mvn package）
-func Package(executable string) (string, error)
-
-// Verify 运行集成测试和验证（mvn verify）
-func Verify(executable string) (string, error)
-
-// Deploy 将构建产物部署到远程仓库（mvn deploy）
-func Deploy(executable string) (string, error)
-
-// Site 生成项目站点文档（mvn site）
-func Site(executable string) (string, error)
-
-// Validate 验证项目结构（mvn validate）
-func Validate(executable string) (string, error)
-
-// Install 执行 mvn clean install
-func Install(executable string) (string, error)
-
-// InstallJar 安装 JAR 文件到本地仓库（mvn install:install-file）
-func InstallJar(executable, jarPath, groupId, artifactId, version string) (string, error)
+// 扩展阶段
+func Initialize(executable string) (string, error)           // mvn initialize
+func GenerateSources(executable string) (string, error)      // mvn generate-sources
+func ProcessResources(executable string) (string, error)     // mvn process-resources
+func PreparePackage(executable string) (string, error)       // mvn prepare-package
+func PreIntegrationTest(executable string) (string, error)   // mvn pre-integration-test
+func IntegrationTest(executable string) (string, error)      // mvn integration-test
+func PostIntegrationTest(executable string) (string, error)  // mvn post-integration-test
+func PreClean(executable string) (string, error)             // mvn pre-clean
+func PostClean(executable string) (string, error)            // mvn post-clean
+func PreSite(executable string) (string, error)              // mvn pre-site
+func PostSite(executable string) (string, error)             // mvn post-site
+func SiteDeploy(executable string) (string, error)           // mvn site-deploy
 ```
 
 #### 依赖命令
 
 ```go
-// DependencyGet 下载指定构件到本地仓库（mvn dependency:get）
 func DependencyGet(executable, groupId, artifactId, version string) (string, error)
-
-// DependencyTree 显示依赖树（mvn dependency:tree）
 func DependencyTree(executable string) (string, error)
-
-// DependencyResolve 解析所有依赖（mvn dependency:resolve）
 func DependencyResolve(executable string) (string, error)
-
-// DependencyAnalyze 分析依赖使用情况（mvn dependency:analyze）
 func DependencyAnalyze(executable string) (string, error)
-
-// DependencyList 列出所有已解析的依赖（mvn dependency:list）
 func DependencyList(executable string) (string, error)
-
-// DependencyPurgeLocalRepository 清理本地仓库（mvn dependency:purge-local-repository）
 func DependencyPurgeLocalRepository(executable string) (string, error)
+func DependencyCopy(executable, gid, aid, ver, outputDir string) (string, error)
+func DependencyCopyDependencies(executable, outputDir string) (string, error)
+func DependencyUnpack(executable, gid, aid, ver, outputDir string) (string, error)
+func DependencyBuildClasspath(executable string) (string, error)
 ```
 
-#### Help 命令
+#### 测试插件
 
 ```go
-// Version 获取 Maven 版本（mvn -v）
-func Version(executable string) (string, error)
+// Surefire（单元测试）
+func SurefireTest(executable string) (string, error)
+func SurefireTestSingleClass(executable, className string) (string, error)
+func SurefireTestMethod(executable, methodSpec string) (string, error)
 
-// GetLocalRepositoryDirectory 获取本地仓库路径（mvn help:evaluate）
-func GetLocalRepositoryDirectory(executable string) (string, error)
-
-// EffectivePom 显示有效的 POM 配置（mvn help:effective-pom）
-func EffectivePom(executable string) (string, error)
-
-// EffectiveSettings 显示有效的 Maven 设置（mvn help:effective-settings）
-func EffectiveSettings(executable string) (string, error)
-
-// ActiveProfiles 显示激活的 Maven profile（mvn help:active-profiles）
-func ActiveProfiles(executable string) (string, error)
-
-// DescribePlugin 描述插件的目标信息（mvn help:describe -Dplugin=...）
-func DescribePlugin(executable, plugin string) (string, error)
+// Failsafe（集成测试）
+func FailsafeIntegrationTest(executable string) (string, error)
+func FailsafeVerify(executable string) (string, error)
 ```
 
-#### Archetype 与 Wrapper
+#### 版本管理
 
 ```go
-// ArchetypeCreate 从原型生成新项目（mvn archetype:generate）
-func ArchetypeCreate(executable, directory, groupId, artifactId, version string) (string, error)
+func VersionsSet(executable, newVersion string) (string, error)
+func VersionsCommit(executable string) (string, error)
+func VersionsRevert(executable string) (string, error)
+func VersionsDisplayDependencyUpdates(executable string) (string, error)
+func VersionsDisplayPluginUpdates(executable string) (string, error)
+func VersionsUseLatestReleases(executable string) (string, error)
+func VersionsUseNextReleases(executable string) (string, error)
+```
 
-// Wrapper 生成 Maven Wrapper 文件（mvn wrapper:wrapper）
+#### 发布
+
+```go
+func ReleasePrepare(executable string) (string, error)
+func ReleasePrepareWithArgs(executable string, args ...string) (string, error)
+func ReleasePerform(executable string) (string, error)
+func ReleaseRollback(executable string) (string, error)
+func ReleaseClean(executable string) (string, error)
+```
+
+#### 构件打包与发布
+
+```go
+func JarJar(executable string) (string, error)
+func SourceJar(executable string) (string, error)
+func SourceJarNoFork(executable string) (string, error)
+func JavadocJavadoc(executable string) (string, error)
+func JavadocJar(executable string) (string, error)
+func InstallJar(executable, jarPath, gid, aid, ver string) (string, error)
+func DeployDeploy(executable string) (string, error)
+func DeployDeployFile(executable, file, gid, aid, ver, repoId, url string) (string, error)
+func GpgSign(executable string) (string, error)
+```
+
+#### 构建工具
+
+```go
+func AssemblySingle(executable string) (string, error)
+func ShadeShade(executable string) (string, error)
+func ExecJava(executable string) (string, error)
+func ExecJavaWithMainClass(executable, mainClass string) (string, error)
+func ExecExec(executable string) (string, error)
+func EnforcerEnforce(executable string) (string, error)
+func ArchetypeCreate(executable, dir, gid, aid, ver string) (string, error)
 func Wrapper(executable string) (string, error)
 ```
 
-### Local Repository
+### POM 解析器
 
-Local Repository 包用于解析和管理 Maven 本地仓库。
+POM 包解析 Maven pom.xml 文件为类型化的 Go 结构体。
+
+```go
+package pom
+
+func ParseFile(path string) (*Project, error)
+func ParseReader(r io.Reader) (*Project, error)
+func ParseBytes(data []byte) (*Project, error)
+
+// Project 方法
+func (p *Project) GetGAV() (groupId, artifactId, version string)
+func (p *Project) GetDependencies() []Dependency
+func (p *Project) GetModules() []string
+func (p *Project) GetPlugins() []Plugin
+func (p *Project) GetProfiles() []Profile
+func (p *Project) GetRepositories() []Repository
+func (p *Project) IsMultiModule() bool
+func (p *Project) HasParent() bool
+func (p *Project) FindDependency(groupId, artifactId string) *Dependency
+func (p *Project) FindPlugin(groupId, artifactId string) *Plugin
+```
+
+**核心类型：** `Project`, `Parent`, `Dependency`, `Plugin`, `Profile`, `Repository`, `Build`, `Scm`, `License`, `Developer`
+
+### Settings 解析器
+
+Settings 包解析 Maven settings.xml 文件。
+
+```go
+package settings
+
+func ParseFile(path string) (*Settings, error)
+func ParseReader(r io.Reader) (*Settings, error)
+func ParseBytes(data []byte) (*Settings, error)
+func ParseDefault() (*Settings, error)   // 解析 ~/.m2/settings.xml 或 ${M2_HOME}/conf/settings.xml
+
+func GetDefaultSettingsPath() string     // 返回 ~/.m2/settings.xml 路径
+
+// Settings 方法
+func (s *Settings) GetMirrors() []Mirror
+func (s *Settings) GetServers() []Server
+func (s *Settings) GetProxies() []Proxy
+func (s *Settings) GetProfiles() []SettingsProfile
+func (s *Settings) GetActiveProfileIds() []string
+func (s *Settings) FindServer(id string) *Server
+func (s *Settings) FindMirror(id string) *Mirror
+func (s *Settings) FindMirrorOf(repositoryId string) *Mirror
+func (s *Settings) FindActiveProxy() *Proxy
+```
+
+**核心类型：** `Settings`, `Server`, `Mirror`, `Proxy`, `SettingsProfile`, `SettingsActivation`
+
+### Local Repository
 
 ```go
 package local_repository
 
-// DefaultLocalRepositoryDirectory 默认本地仓库路径（~/.m2/repository/）
-var DefaultLocalRepositoryDirectory string
+var DefaultLocalRepositoryDirectory string  // ~/.m2/repository/
 
-// ParseLocalRepositoryDirectory 从 Maven 解析本地仓库路径，
-// 如果 Maven 不可用则返回默认路径。
 func ParseLocalRepositoryDirectory(executable string) string
-
-// BuildDirectory 构造 GAV 坐标的相对路径
 func BuildDirectory(groupId, artifactId, version string) string
-
-// FindDirectory 在本地仓库中查找 GAV 目录
-func FindDirectory(localRepositoryDirectory, groupId, artifactId, version string) (string, error)
-
-// FindJar 在本地仓库中根据 GAV 坐标查找 JAR 文件
-func FindJar(localRepositoryDirectory, groupId, artifactId, version string) (string, error)
-
-// FindJarWithClassifier 查找带分类器的 JAR 文件（如 "sources"、"javadoc"）
-func FindJarWithClassifier(localRepositoryDirectory, groupId, artifactId, version, classifier string) (string, error)
+func FindDirectory(repoDir, groupId, artifactId, version string) (string, error)
+func FindJar(repoDir, groupId, artifactId, version string) (string, error)
+func FindJarWithClassifier(repoDir, groupId, artifactId, version, classifier string) (string, error)
 ```
 
 ### Installer
 
-Installer 包提供了 Maven 的自动安装功能。
-
 ```go
 package installer
 
-// Install 下载并安装 Maven 到当前平台
-// 返回 Maven 主目录路径
-func Install() (string, error)
-
-// InstallLinux 在 Linux 上安装 Maven（apt-get/yum 或二进制包回退）
-func InstallLinux() (string, error)
-
-// InstallMacOS 在 macOS 上安装 Maven（Homebrew 或二进制包回退）
-func InstallMacOS() (string, error)
-
-// InstallWindows 在 Windows 上安装 Maven（zip 下载 + 环境变量配置）
-func InstallWindows() (string, error)
-
-// InstallOptions macOS 安装的配置选项
-type InstallOptions struct {
-    MavenURL     string
-    HomeDir      string
-    SkipEnvSetup bool
-}
-
-// InstallMacOSWithOptions 使用可配置选项在 macOS 上安装 Maven
-func InstallMacOSWithOptions(options InstallOptions) (string, error)
+func Install() (string, error)              // 自动检测平台
+func InstallLinux() (string, error)         // apt-get/yum 或二进制包
+func InstallMacOS() (string, error)         // Homebrew 或二进制包
+func InstallWindows() (string, error)       // zip + 环境变量
+func InstallMacOSWithOptions(opts InstallOptions) (string, error)
 ```
 
 ## 使用示例
 
-### 查找 Maven
+### CI/CD 构建（构建器模式）
 
 ```go
-maven, err := finder.FindMaven()
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Printf("Maven 可执行文件路径: %s\n", maven)
+output, err := command.NewCommandBuilder().
+    WithExecutable("mvn").
+    WithWorkingDirectory("/workspace/project").
+    WithBatchMode().
+    WithNoTransferProgress().
+    WithProfiles("ci").
+    WithSkipTests().
+    WithUpdateSnapshots().
+    Clean()
 ```
 
-### 执行 Maven 命令
+### 多模块构建
+
+```go
+output, err := command.NewCommandBuilder().
+    WithProjects("module-a", "module-b").
+    WithAlsoMake().
+    WithBatchMode().
+    Install()
+```
+
+### 运行单个测试
 
 ```go
 maven, _ := finder.FindMaven()
-
-// 使用特定生命周期命令
-output, err := command.Clean(maven)
-output, err = command.Compile(maven)
-output, err = command.Test(maven)
-output, err = command.Package(maven)
-
-// 带工作目录
-err = command.Exec(&command.Options{
-    Executable:       maven,
-    Args:             []string{"clean", "install"},
-    WorkingDirectory: "/path/to/project",
-})
+output, err := command.SurefireTestSingleClass(maven, "com.example.UserServiceTest")
 ```
 
-### 查找 JAR 文件
+### 解析 POM 文件
+
+```go
+project, err := pom.ParseFile("pom.xml")
+if err != nil {
+    log.Fatal(err)
+}
+groupId, artifactId, version := project.GetGAV()
+fmt.Printf("项目: %s:%s:%s\n", groupId, artifactId, version)
+
+for _, dep := range project.GetDependencies() {
+    fmt.Printf("  %s:%s:%s (%s)\n", dep.GroupId, dep.ArtifactId, dep.Version, dep.Scope)
+}
+```
+
+### 解析 settings.xml
+
+```go
+settings, err := settings.ParseDefault()
+if err != nil {
+    log.Fatal(err)
+}
+for _, mirror := range settings.GetMirrors() {
+    fmt.Printf("镜像 %s: %s -> %s\n", mirror.Id, mirror.MirrorOf, mirror.URL)
+}
+```
+
+### 查找带 Classifier 的 JAR
 
 ```go
 maven, _ := finder.FindMaven()
 repoDir := local_repository.ParseLocalRepositoryDirectory(maven)
-
-// 查找主构件
-jarPath, err := local_repository.FindJar(repoDir, "org.springframework", "spring-core", "5.3.21")
-
-// 查找源码 JAR
-sourcesPath, err := local_repository.FindJarWithClassifier(repoDir, "org.springframework", "spring-core", "5.3.21", "sources")
-
-// 查找文档 JAR
-javadocPath, err := local_repository.FindJarWithClassifier(repoDir, "org.springframework", "spring-core", "5.3.21", "javadoc")
+sources, _ := local_repository.FindJarWithClassifier(repoDir, "org.springframework", "spring-core", "5.3.21", "sources")
 ```
 
-### 获取本地仓库路径
+### 版本管理
 
 ```go
 maven, _ := finder.FindMaven()
-repoDir := local_repository.ParseLocalRepositoryDirectory(maven)
-fmt.Printf("本地仓库路径: %s\n", repoDir)
+output, err := command.VersionsSet(maven, "2.0.0")
+// 确认无误后提交：
+output, err = command.VersionsCommit(maven)
+// 或者发现问题则回滚：
+// output, err = command.VersionsRevert(maven)
 ```
 
-### 依赖操作
+### Maven Wrapper 检测
 
 ```go
-maven, _ := finder.FindMaven()
-
-// 下载依赖
-output, err := command.DependencyGet(maven, "com.alibaba", "fastjson", "2.0.2")
-
-// 查看依赖树
-tree, err := command.DependencyTree(maven)
-
-// 分析依赖
-analysis, err := command.DependencyAnalyze(maven)
-```
-
-### 安装 Maven
-
-```go
-mavenHome, err := installer.Install()
+// 优先使用项目 Wrapper 而非系统 Maven
+maven, err := finder.FindBestMaven("/path/to/project")
 if err != nil {
     log.Fatal(err)
 }
-fmt.Printf("Maven 安装路径: %s\n", mavenHome)
+output, _ := command.Compile(maven)
 ```
