@@ -1,8 +1,10 @@
 package command
 
 import (
+	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +24,7 @@ func TestCommandBuilder_BuildArgs(t *testing.T) {
 
 	args := builder.buildArgs()
 
-	// 验证关键参数存在
+	// Verify key arguments exist
 	argsStr := strings.Join(args, " ")
 	assert.Contains(t, argsStr, "-P ci,release")
 	assert.Contains(t, argsStr, "-DskipTests=true")
@@ -164,7 +166,7 @@ func TestCommandBuilder_Build(t *testing.T) {
 }
 
 func TestCommandBuilder_ChainedUsage(t *testing.T) {
-	// 模拟典型的 CI 构建场景
+	// Simulate a typical CI build scenario
 	builder := NewCommandBuilder().
 		WithExecutable("mvn").
 		WithWorkingDirectory("/home/user/project").
@@ -188,22 +190,22 @@ func TestCommandBuilder_ChainedUsage(t *testing.T) {
 }
 
 func TestCommandBuilder_NoMutation(t *testing.T) {
-	// 验证便捷方法不修改原始 builder
+	// Verify convenience methods do not modify the original builder
 	builder := NewCommandBuilder().
 		WithExecutable("mvn").
 		WithBatchMode().
 		WithGoal("existing-goal")
 
-	// 记录原始 goals
+	// Record original goals
 	originalArgs := builder.buildArgs()
 	originalStr := strings.Join(originalArgs, " ")
 	assert.Contains(t, originalStr, "existing-goal")
 	assert.NotContains(t, originalStr, "clean")
 
-	// 调用 Clean 便捷方法（会失败因为没有 mvn，但我们只关心不修改 builder）
+	// Call Clean convenience method (will fail since no mvn, but we only care about no mutation)
 	builder.Clean()
 
-	// 验证原始 builder 没有被修改
+	// Verify original builder was not modified
 	afterArgs := builder.buildArgs()
 	afterStr := strings.Join(afterArgs, " ")
 	assert.Equal(t, originalStr, afterStr, "builder should not be mutated by convenience methods")
@@ -211,23 +213,162 @@ func TestCommandBuilder_NoMutation(t *testing.T) {
 }
 
 func TestCommandBuilder_ConsecutiveCalls(t *testing.T) {
-	// 验证连续调用便捷方法不会累积目标
+	// Verify consecutive convenience method calls do not accumulate goals
 	builder := NewCommandBuilder().WithExecutable("mvn").WithGoal("base")
 
-	// 第一次调用
+	// First call
 	args1 := builder.withGoal("clean").buildArgs()
 	assert.Contains(t, strings.Join(args1, " "), "clean")
 	assert.NotContains(t, strings.Join(args1, " "), "compile")
 
-	// 第二次调用
+	// Second call
 	args2 := builder.withGoal("compile").buildArgs()
 	assert.Contains(t, strings.Join(args2, " "), "compile")
 	assert.NotContains(t, strings.Join(args2, " "), "clean")
 
-	// 原始 builder 没变
+	// Original builder unchanged
 	originalArgs := builder.buildArgs()
 	originalStr := strings.Join(originalArgs, " ")
 	assert.Contains(t, originalStr, "base")
 	assert.NotContains(t, originalStr, "clean")
 	assert.NotContains(t, originalStr, "compile")
+}
+
+// --- New feature tests ---
+
+func TestCommandBuilder_WithEnv(t *testing.T) {
+	builder := NewCommandBuilder().
+		WithEnv("JAVA_HOME=/usr/lib/jvm/java-17", "MAVEN_OPTS=-Xmx2g").
+		WithGoal("compile")
+
+	opts := builder.Build()
+	assert.Contains(t, opts.Env, "JAVA_HOME=/usr/lib/jvm/java-17")
+	assert.Contains(t, opts.Env, "MAVEN_OPTS=-Xmx2g")
+}
+
+func TestCommandBuilder_WithContext(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	builder := NewCommandBuilder().
+		WithContext(ctx).
+		WithGoal("compile")
+
+	opts := builder.Build()
+	assert.Equal(t, ctx, opts.Context)
+}
+
+func TestCommandBuilder_CleanInstall(t *testing.T) {
+	// CleanInstall adds "clean" and "install" goals
+	args := NewCommandBuilder().withGoals("clean", "install").buildArgs()
+	argsStr := strings.Join(args, " ")
+	assert.Contains(t, argsStr, "clean")
+	assert.Contains(t, argsStr, "install")
+}
+
+func TestCommandBuilder_CleanPackage(t *testing.T) {
+	args := NewCommandBuilder().WithGoals("clean", "package").buildArgs()
+	argsStr := strings.Join(args, " ")
+	assert.Contains(t, argsStr, "clean")
+	assert.Contains(t, argsStr, "package")
+}
+
+func TestCommandBuilder_CleanDeploy(t *testing.T) {
+	args := NewCommandBuilder().WithGoals("clean", "deploy").buildArgs()
+	argsStr := strings.Join(args, " ")
+	assert.Contains(t, argsStr, "clean")
+	assert.Contains(t, argsStr, "deploy")
+}
+
+func TestCommandBuilder_MultiPhaseConvenienceMethods(t *testing.T) {
+	// Verify multi-phase methods don't mutate original builder
+	builder := NewCommandBuilder().WithBatchMode().WithGoal("base")
+
+	// Build a copy with clean+install
+	copy := builder.withGoals("clean", "install")
+	copyArgs := strings.Join(copy.buildArgs(), " ")
+	assert.Contains(t, copyArgs, "clean")
+	assert.Contains(t, copyArgs, "install")
+
+	// Original unchanged
+	origArgs := strings.Join(builder.buildArgs(), " ")
+	assert.NotContains(t, origArgs, "clean")
+	assert.NotContains(t, origArgs, "install")
+}
+
+func TestCommandBuilder_FailModeMutualExclusion(t *testing.T) {
+	// WithFailAtEnd should clear failNever and failFast
+	builder := NewCommandBuilder().WithFailNever().WithFailAtEnd()
+	args := strings.Join(builder.buildArgs(), " ")
+	assert.Contains(t, args, "-fae")
+	assert.NotContains(t, args, "-fn")
+	assert.NotContains(t, args, "-ff")
+
+	// WithFailNever should clear failAtEnd and failFast
+	builder = NewCommandBuilder().WithFailAtEnd().WithFailNever()
+	args = strings.Join(builder.buildArgs(), " ")
+	assert.Contains(t, args, "-fn")
+	assert.NotContains(t, args, "-fae")
+	assert.NotContains(t, args, "-ff")
+
+	// WithFailFast should clear failAtEnd and failNever
+	builder = NewCommandBuilder().WithFailNever().WithFailFast()
+	args = strings.Join(builder.buildArgs(), " ")
+	assert.Contains(t, args, "-ff")
+	assert.NotContains(t, args, "-fae")
+	assert.NotContains(t, args, "-fn")
+}
+
+func TestCommandBuilder_ChecksumMutualExclusion(t *testing.T) {
+	// WithStrictChecksums should clear laxChecksums
+	builder := NewCommandBuilder().WithLaxChecksums().WithStrictChecksums()
+	args := strings.Join(builder.buildArgs(), " ")
+	assert.Contains(t, args, "-C")
+	assert.NotContains(t, args, "-c")
+
+	// WithLaxChecksums should clear strictChecksums
+	builder = NewCommandBuilder().WithStrictChecksums().WithLaxChecksums()
+	args = strings.Join(builder.buildArgs(), " ")
+	assert.Contains(t, args, "-c")
+	assert.NotContains(t, args, "-C")
+}
+
+func TestCommandBuilder_PropertiesSorted(t *testing.T) {
+	// Properties should be sorted for deterministic output
+	builder := NewCommandBuilder().
+		WithProperty("zebra", "z").
+		WithProperty("alpha", "a").
+		WithProperty("middle", "m").
+		WithGoal("compile")
+
+	args := builder.buildArgs()
+
+	// Find the property arguments
+	var propArgs []string
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "-D") && !strings.HasPrefix(arg, "-Dskip") && !strings.HasPrefix(arg, "-Dmaven.test") {
+			propArgs = append(propArgs, arg)
+		}
+	}
+	assert.Equal(t, []string{"-Dalpha=a", "-Dmiddle=m", "-Dzebra=z"}, propArgs)
+}
+
+func TestCommandBuilder_Validate(t *testing.T) {
+	args := NewCommandBuilder().withGoal("validate").buildArgs()
+	assert.Contains(t, strings.Join(args, " "), "validate")
+}
+
+func TestCommandBuilder_Site(t *testing.T) {
+	args := NewCommandBuilder().withGoal("site").buildArgs()
+	assert.Contains(t, strings.Join(args, " "), "site")
+}
+
+func TestCommandBuilder_DependencyTree(t *testing.T) {
+	args := NewCommandBuilder().withGoal("dependency:tree").buildArgs()
+	assert.Contains(t, strings.Join(args, " "), "dependency:tree")
+}
+
+func TestCommandBuilder_HelpEffectivePom(t *testing.T) {
+	args := NewCommandBuilder().withGoal("help:effective-pom").buildArgs()
+	assert.Contains(t, strings.Join(args, " "), "help:effective-pom")
 }

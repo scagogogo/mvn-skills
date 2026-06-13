@@ -1,6 +1,7 @@
 package finder
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -76,8 +77,9 @@ func TestFindBestMavenWithoutWrapper(t *testing.T) {
 	// 这个测试在没有 Maven 的环境中会失败
 	maven, err := FindBestMaven(tmpDir)
 	if err != nil {
-		// 系统也没有 Maven
-		assert.Equal(t, ErrNotFoundMaven, err)
+		// System has no Maven — should be a NotFoundError
+		var nfe *NotFoundError
+		assert.True(t, errors.As(err, &nfe))
 	} else {
 		assert.NotEmpty(t, maven)
 	}

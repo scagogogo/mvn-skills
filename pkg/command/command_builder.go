@@ -1,8 +1,10 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 )
 
@@ -42,6 +44,8 @@ type CommandBuilder struct {
 	stdout           io.Writer
 	stderr           io.Writer
 	goals            []string
+	env              []string
+	ctx              context.Context
 }
 
 // NewCommandBuilder creates a new Maven command builder
@@ -201,18 +205,24 @@ func (b *CommandBuilder) WithResumeFrom(module string) *CommandBuilder {
 // WithFailAtEnd continues building other modules on failure, failing at the end (-fae / --fail-at-end)
 func (b *CommandBuilder) WithFailAtEnd() *CommandBuilder {
 	b.failAtEnd = true
+	b.failNever = false
+	b.failFast = false
 	return b
 }
 
 // WithFailNever never stops the build due to failures (-fn / --fail-never)
 func (b *CommandBuilder) WithFailNever() *CommandBuilder {
 	b.failNever = true
+	b.failAtEnd = false
+	b.failFast = false
 	return b
 }
 
 // WithFailFast stops on the first failure (-ff / --fail-fast), this is the default behavior
 func (b *CommandBuilder) WithFailFast() *CommandBuilder {
 	b.failFast = true
+	b.failAtEnd = false
+	b.failNever = false
 	return b
 }
 
@@ -225,12 +235,14 @@ func (b *CommandBuilder) WithNoTransferProgress() *CommandBuilder {
 // WithStrictChecksums fails the build on checksum mismatch (-C / --strict-checksums)
 func (b *CommandBuilder) WithStrictChecksums() *CommandBuilder {
 	b.strictChecksums = true
+	b.laxChecksums = false
 	return b
 }
 
 // WithLaxChecksums issues a warning on checksum mismatch (-c / --lax-checksums)
 func (b *CommandBuilder) WithLaxChecksums() *CommandBuilder {
 	b.laxChecksums = true
+	b.strictChecksums = false
 	return b
 }
 
@@ -267,6 +279,18 @@ func (b *CommandBuilder) WithGoal(goal string) *CommandBuilder {
 // WithGoals batch-adds Maven goals/phases to execute
 func (b *CommandBuilder) WithGoals(goals ...string) *CommandBuilder {
 	b.goals = append(b.goals, goals...)
+	return b
+}
+
+// WithEnv appends environment variables to the Maven process (e.g. "JAVA_HOME=/usr/lib/jvm/java-17")
+func (b *CommandBuilder) WithEnv(env ...string) *CommandBuilder {
+	b.env = append(b.env, env...)
+	return b
+}
+
+// WithContext sets the context for cancellation and timeout support
+func (b *CommandBuilder) WithContext(ctx context.Context) *CommandBuilder {
+	b.ctx = ctx
 	return b
 }
 
@@ -404,9 +428,14 @@ func (b *CommandBuilder) buildArgs() []string {
 		args = append(args, "-V")
 	}
 
-	// System properties
-	for key, value := range b.properties {
-		args = append(args, fmt.Sprintf("-D%s=%s", key, value))
+	// System properties (sorted for deterministic output)
+	keys := make([]string, 0, len(b.properties))
+	for key := range b.properties {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		args = append(args, fmt.Sprintf("-D%s=%s", key, b.properties[key]))
 	}
 
 	// Goals / phases
@@ -424,6 +453,8 @@ func (b *CommandBuilder) Build() *Options {
 		Stdin:            b.stdin,
 		Stdout:           b.stdout,
 		Stderr:           b.stderr,
+		Env:              b.env,
+		Context:          b.ctx,
 	}
 }
 
@@ -443,6 +474,24 @@ func (b *CommandBuilder) RunForStdout() (string, error) {
 	return ExecForStdout(builder.executable, args...)
 }
 
+// RunWithContext executes the constructed Maven command with the given context
+func (b *CommandBuilder) RunWithContext(ctx context.Context) error {
+	opts := b.Build()
+	opts.Context = ctx
+	return Exec(opts)
+}
+
+// RunForStdoutWithContext executes the constructed Maven command with the given context and returns stdout
+func (b *CommandBuilder) RunForStdoutWithContext(ctx context.Context) (string, error) {
+	builder := *b // shallow copy
+	builder.stdout = nil
+	builder.stderr = nil
+	builder.stdin = nil
+
+	args := builder.buildArgs()
+	return ExecForStdoutWithContext(ctx, builder.executable, args...)
+}
+
 // Convenience methods: using the builder to execute common lifecycle phases
 // These methods do not modify the original builder; instead they create copies and add goals
 
@@ -452,6 +501,21 @@ func (b *CommandBuilder) withGoal(goal string) *CommandBuilder {
 	copy.goals = append([]string{}, b.goals...) // deep copy goals slice
 	copy.goals = append(copy.goals, goal)
 	return &copy
+}
+
+// withGoals creates a copy and adds multiple goals without modifying the original builder
+func (b *CommandBuilder) withGoals(goals ...string) *CommandBuilder {
+	copy := *b // shallow copy
+	copy.goals = append([]string{}, b.goals...) // deep copy goals slice
+	copy.goals = append(copy.goals, goals...)
+	return &copy
+}
+
+// --- Standard lifecycle phases ---
+
+// Validate validates that the project structure is correct
+func (b *CommandBuilder) Validate() (string, error) {
+	return b.withGoal("validate").RunForStdout()
 }
 
 // Clean cleans up build artifacts
@@ -474,8 +538,13 @@ func (b *CommandBuilder) Package() (string, error) {
 	return b.withGoal("package").RunForStdout()
 }
 
+// Verify verifies the project
+func (b *CommandBuilder) Verify() (string, error) {
+	return b.withGoal("verify").RunForStdout()
+}
+
 // Install installs to the local repository (executes mvn install, without clean)
-// Note: If you need to run clean install, use WithGoals("clean", "install").RunForStdout()
+// Note: If you need to run clean install, use CleanInstall() or WithGoals("clean", "install").RunForStdout()
 func (b *CommandBuilder) Install() (string, error) {
 	return b.withGoal("install").RunForStdout()
 }
@@ -485,7 +554,73 @@ func (b *CommandBuilder) Deploy() (string, error) {
 	return b.withGoal("deploy").RunForStdout()
 }
 
-// Verify verifies the project
-func (b *CommandBuilder) Verify() (string, error) {
-	return b.withGoal("verify").RunForStdout()
+// Site generates project site documentation
+func (b *CommandBuilder) Site() (string, error) {
+	return b.withGoal("site").RunForStdout()
+}
+
+// --- Multi-phase convenience methods ---
+
+// CleanInstall runs clean then install (mvn clean install) — the most common CI build command
+func (b *CommandBuilder) CleanInstall() (string, error) {
+	return b.withGoals("clean", "install").RunForStdout()
+}
+
+// CleanPackage runs clean then package (mvn clean package)
+func (b *CommandBuilder) CleanPackage() (string, error) {
+	return b.withGoals("clean", "package").RunForStdout()
+}
+
+// CleanDeploy runs clean then deploy (mvn clean deploy)
+func (b *CommandBuilder) CleanDeploy() (string, error) {
+	return b.withGoals("clean", "deploy").RunForStdout()
+}
+
+// CleanVerify runs clean then verify (mvn clean verify)
+func (b *CommandBuilder) CleanVerify() (string, error) {
+	return b.withGoals("clean", "verify").RunForStdout()
+}
+
+// CleanTest runs clean then test (mvn clean test)
+func (b *CommandBuilder) CleanTest() (string, error) {
+	return b.withGoals("clean", "test").RunForStdout()
+}
+
+// --- Plugin goal convenience methods ---
+
+// DependencyTree prints the dependency tree (mvn dependency:tree)
+func (b *CommandBuilder) DependencyTree() (string, error) {
+	return b.withGoal("dependency:tree").RunForStdout()
+}
+
+// DependencyAnalyze analyzes dependency usage (mvn dependency:analyze)
+func (b *CommandBuilder) DependencyAnalyze() (string, error) {
+	return b.withGoal("dependency:analyze").RunForStdout()
+}
+
+// DependencyList lists all resolved dependencies (mvn dependency:list)
+func (b *CommandBuilder) DependencyList() (string, error) {
+	return b.withGoal("dependency:list").RunForStdout()
+}
+
+// DependencyResolve resolves all dependencies (mvn dependency:resolve)
+func (b *CommandBuilder) DependencyResolve() (string, error) {
+	return b.withGoal("dependency:resolve").RunForStdout()
+}
+
+// Version displays the Maven version (mvn -v)
+func (b *CommandBuilder) Version() (string, error) {
+	return b.withGoal("-v").RunForStdout()
+}
+
+// HelpEffectivePom displays the effective POM (mvn help:effective-pom)
+func (b *CommandBuilder) HelpEffectivePom() (string, error) {
+	return b.withGoal("help:effective-pom").RunForStdout()
+}
+
+// HelpDescribe describes a plugin (mvn help:describe)
+func (b *CommandBuilder) HelpDescribe(plugin string) (string, error) {
+	copy := b.withGoal("help:describe")
+	copy.properties["plugin"] = plugin
+	return copy.RunForStdout()
 }

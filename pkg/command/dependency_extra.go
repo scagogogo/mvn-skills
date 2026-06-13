@@ -32,3 +32,24 @@ func DependencyUnpack(executable, groupId, artifactId, version, outputDirectory 
 func DependencyBuildClasspath(executable string) (string, error) {
 	return ExecForStdout(executable, "dependency:build-classpath")
 }
+
+// DependencyGetWithOptions downloads an artifact using structured options
+func DependencyGetWithOptions(executable string, opts *DependencyGetOption) (string, error) {
+	args := opts.ToArgs()
+	return ExecForStdout(executable, args...)
+}
+
+// DependencyResolvePlugins resolves all plugin dependencies (mvn dependency:resolve-plugins)
+func DependencyResolvePlugins(executable string) (string, error) {
+	return ExecForStdout(executable, "dependency:resolve-plugins")
+}
+
+// DependencyGoOffline resolves all dependencies needed for offline builds (mvn dependency:go-offline)
+func DependencyGoOffline(executable string) (string, error) {
+	return ExecForStdout(executable, "dependency:go-offline")
+}
+
+// DependencyUnpackDependencies unpacks all dependencies to the target directory (mvn dependency:unpack-dependencies)
+func DependencyUnpackDependencies(executable, outputDirectory string) (string, error) {
+	return ExecForStdout(executable, "dependency:unpack-dependencies", "-DoutputDirectory="+outputDirectory)
+}
