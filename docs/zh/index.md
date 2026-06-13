@@ -14,7 +14,7 @@
 ### 安装
 
 ```bash
-go get github.com/scagogogo/mvn-sdk
+go get github.com/scagogogo/mvn-skills
 ```
 
 ### 基本使用
@@ -24,7 +24,7 @@ package main
 
 import (
     "fmt"
-    "github.com/scagogogo/mvn-sdk/pkg/finder"
+    "github.com/scagogogo/mvn-skills/pkg/finder"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 ## 文档
 
 - [API 参考](/api) - 详细的 API 文档
-- [示例](https://github.com/scagogogo/mvn-sdk/tree/main/examples) - 代码示例
+- [示例](https://github.com/scagogogo/mvn-skills/tree/main/examples) - 代码示例
 
 ## 许可证
 

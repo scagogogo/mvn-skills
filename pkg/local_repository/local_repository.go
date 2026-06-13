@@ -3,7 +3,7 @@ package local_repository
 import (
 	"errors"
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/command"
+	"github.com/scagogogo/mvn-skills/pkg/command"
 	"os"
 	"path/filepath"
 	"strings"

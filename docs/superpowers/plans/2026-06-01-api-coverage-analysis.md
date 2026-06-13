@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: `superpowers:subagent-driven-development`
 > Steps use checkbox (`- [ ]`) syntax.
 
-**Goal:** 对 mvn-sdk 当前 API 封装程度进行全面评估，识别已实现/未实现/有缺陷的 API，并制定补全计划
+**Goal:** 对 mvn-skills 当前 API 封装程度进行全面评估，识别已实现/未实现/有缺陷的 API，并制定补全计划
 
 **Architecture:** 调研现有代码（4 个 package）→ 对比 Maven CLI 全量命令 → 识别缺失/缺陷 → 设计补全方案 → 分优先级实现
 
@@ -113,7 +113,7 @@
 
 ## Phase 1: Pre-Planning Analysis
 
-**Feature:** mvn-sdk API 封装补全
+**Feature:** mvn-skills API 封装补全
 **Scope:** 多个子系统（command / finder / local_repository / installer / docs）
 **Files Create:**
 - `pkg/command/lifecycle.go` — 生命周期阶段命令（clean/compile/test/package/verify/deploy）

@@ -28,7 +28,7 @@ module.exports = {
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/scagogogo/mvn-sdk' }
+      { icon: 'github', link: 'https://github.com/scagogogo/mvn-skills' }
     ],
 
     footer: {

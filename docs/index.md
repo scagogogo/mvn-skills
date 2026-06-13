@@ -14,7 +14,7 @@ A Go SDK for Maven operations.
 ### Installation
 
 ```bash
-go get github.com/scagogogo/mvn-sdk
+go get github.com/scagogogo/mvn-skills
 ```
 
 ### Basic Usage
@@ -24,7 +24,7 @@ package main
 
 import (
     "fmt"
-    "github.com/scagogogo/mvn-sdk/pkg/finder"
+    "github.com/scagogogo/mvn-skills/pkg/finder"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 ## Documentation
 
 - [API Reference](/api) - Detailed API documentation
-- [Examples](https://github.com/scagogogo/mvn-sdk/tree/main/examples) - Code examples
+- [Examples](https://github.com/scagogogo/mvn-skills/tree/main/examples) - Code examples
 
 ## License
 

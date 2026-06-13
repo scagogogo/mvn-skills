@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
-	"github.com/scagogogo/mvn-sdk/pkg/local_repository"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/local_repository"
 )
 
 func main() {

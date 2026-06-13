@@ -9,12 +9,12 @@
 # 二、安装依赖
 
 ```bash
-go get -u github.com/scagogogo/mvn-sdk
+go get -u github.com/scagogogo/mvn-skills
 ```
 
 # 三、文档
 
-完整的API文档可在以下地址访问：https://scagogogo.github.io/mvn-sdk/
+完整的API文档可在以下地址访问：https://scagogogo.github.io/mvn-skills/
 
 # 四、Example
 
@@ -25,7 +25,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
 )
 
 func main() {
@@ -48,8 +48,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
-	"github.com/scagogogo/mvn-sdk/pkg/local_repository"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/local_repository"
 )
 
 func main() {
@@ -73,8 +73,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
-	"github.com/scagogogo/mvn-sdk/pkg/local_repository"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/local_repository"
 )
 
 func main() {
@@ -102,8 +102,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/command"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/command"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
 )
 
 func main() {
@@ -741,8 +741,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/command"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/command"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
 )
 
 func main() {

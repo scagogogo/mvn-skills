@@ -9,12 +9,12 @@ A Go SDK for conveniently operating `mvn` in Go. It detects and uses the locally
 ## 2. Installation
 
 ```bash
-go get -u github.com/scagogogo/mvn-sdk
+go get -u github.com/scagogogo/mvn-skills
 ```
 
 ## 3. Documentation
 
-Full API documentation is available at: https://scagogogo.github.io/mvn-sdk/
+Full API documentation is available at: https://scagogogo.github.io/mvn-skills/
 
 ## 4. Examples
 
@@ -25,7 +25,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
 )
 
 func main() {
@@ -46,8 +46,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
-	"github.com/scagogogo/mvn-sdk/pkg/local_repository"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/local_repository"
 )
 
 func main() {
@@ -69,8 +69,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
-	"github.com/scagogogo/mvn-sdk/pkg/local_repository"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/local_repository"
 )
 
 func main() {
@@ -96,8 +96,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/command"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/command"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
 )
 
 func main() {
@@ -132,8 +132,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/scagogogo/mvn-sdk/pkg/command"
-	"github.com/scagogogo/mvn-sdk/pkg/finder"
+	"github.com/scagogogo/mvn-skills/pkg/command"
+	"github.com/scagogogo/mvn-skills/pkg/finder"
 )
 
 func main() {

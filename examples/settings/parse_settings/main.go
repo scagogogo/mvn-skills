@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/scagogogo/mvn-sdk/pkg/settings"
+	"github.com/scagogogo/mvn-skills/pkg/settings"
 )
 
 func main() {
