@@ -119,7 +119,9 @@ func unzipWindows(zipPath, destDir string) error {
 		}
 
 		if f.FileInfo().IsDir() {
-			if err := os.MkdirAll(fpath, os.ModePerm); err != nil { return err }
+			if err := os.MkdirAll(fpath, os.ModePerm); err != nil {
+				return err
+			}
 			continue
 		}
 
