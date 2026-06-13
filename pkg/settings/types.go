@@ -4,18 +4,18 @@ import "encoding/xml"
 
 // Settings represents the root structure of a Maven settings.xml file
 type Settings struct {
-	XMLName           xml.Name           `xml:"settings"`
-	Xmlns             string             `xml:"xmlns,attr"`
-	LocalRepository   string             `xml:"localRepository"`
-	InteractiveMode   bool               `xml:"interactiveMode"`
-	UsePluginRegistry bool               `xml:"usePluginRegistry"`
-	Offline           bool               `xml:"offline"`
-	PluginGroups      *PluginGroups      `xml:"pluginGroups"`
-	Servers           *Servers           `xml:"servers"`
-	Mirrors           *Mirrors           `xml:"mirrors"`
-	Proxies           *Proxies           `xml:"proxies"`
-	Profiles          *SettingsProfiles  `xml:"profiles"`
-	ActiveProfiles    *ActiveProfiles    `xml:"activeProfiles"`
+	XMLName           xml.Name          `xml:"settings"`
+	Xmlns             string            `xml:"xmlns,attr"`
+	LocalRepository   string            `xml:"localRepository"`
+	InteractiveMode   bool              `xml:"interactiveMode"`
+	UsePluginRegistry bool              `xml:"usePluginRegistry"`
+	Offline           bool              `xml:"offline"`
+	PluginGroups      *PluginGroups     `xml:"pluginGroups"`
+	Servers           *Servers          `xml:"servers"`
+	Mirrors           *Mirrors          `xml:"mirrors"`
+	Proxies           *Proxies          `xml:"proxies"`
+	Profiles          *SettingsProfiles `xml:"profiles"`
+	ActiveProfiles    *ActiveProfiles   `xml:"activeProfiles"`
 }
 
 // PluginGroup represents a plugin group prefix
@@ -30,14 +30,14 @@ type PluginGroups struct {
 
 // Server represents server authentication information
 type Server struct {
-	Id       string `xml:"id"`
-	Username string `xml:"username"`
-	Password string `xml:"password"`
-	PrivateKey string `xml:"privateKey"`
-	Passphrase string `xml:"passphrase"`
-	FilePermissions string `xml:"filePermissions"`
-	DirectoryPermissions string `xml:"directoryPermissions"`
-	Configuration *Configuration `xml:"configuration"`
+	Id                   string         `xml:"id"`
+	Username             string         `xml:"username"`
+	Password             string         `xml:"password"`
+	PrivateKey           string         `xml:"privateKey"`
+	Passphrase           string         `xml:"passphrase"`
+	FilePermissions      string         `xml:"filePermissions"`
+	DirectoryPermissions string         `xml:"directoryPermissions"`
+	Configuration        *Configuration `xml:"configuration"`
 }
 
 // Servers represents the server list
@@ -47,13 +47,13 @@ type Servers struct {
 
 // Mirror represents a repository mirror configuration
 type Mirror struct {
-	Id       string `xml:"id"`
-	Name     string `xml:"name"`
-	URL      string `xml:"url"`
-	MirrorOf string `xml:"mirrorOf"`
-	Layout   string `xml:"layout"`
+	Id              string `xml:"id"`
+	Name            string `xml:"name"`
+	URL             string `xml:"url"`
+	MirrorOf        string `xml:"mirrorOf"`
+	Layout          string `xml:"layout"`
 	MirrorOfLayouts string `xml:"mirrorOfLayouts"`
-	Blocked  bool   `xml:"blocked"`
+	Blocked         bool   `xml:"blocked"`
 }
 
 // Mirrors represents the mirror list
@@ -63,13 +63,13 @@ type Mirrors struct {
 
 // Proxy represents a proxy configuration
 type Proxy struct {
-	Id       string `xml:"id"`
-	Active   bool   `xml:"active"`
-	Protocol string `xml:"protocol"`
-	Username string `xml:"username"`
-	Password string `xml:"password"`
-	Port     int    `xml:"port"`
-	Host     string `xml:"host"`
+	Id            string `xml:"id"`
+	Active        bool   `xml:"active"`
+	Protocol      string `xml:"protocol"`
+	Username      string `xml:"username"`
+	Password      string `xml:"password"`
+	Port          int    `xml:"port"`
+	Host          string `xml:"host"`
 	NonProxyHosts string `xml:"nonProxyHosts"`
 }
 
@@ -80,20 +80,20 @@ type Proxies struct {
 
 // SettingsProfile represents a Profile in settings.xml
 type SettingsProfile struct {
-	Id                 string              `xml:"id"`
-	Activation         *SettingsActivation `xml:"activation"`
-	Properties         *SettingsProperties `xml:"properties"`
+	Id                 string                `xml:"id"`
+	Activation         *SettingsActivation   `xml:"activation"`
+	Properties         *SettingsProperties   `xml:"properties"`
 	Repositories       *SettingsRepositories `xml:"repositories"`
 	PluginRepositories *SettingsRepositories `xml:"pluginRepositories"`
 }
 
 // SettingsActivation represents the activation condition for a settings Profile
 type SettingsActivation struct {
-	ActiveByDefault bool                `xml:"activeByDefault"`
-	Jdk            string              `xml:"jdk"`
-	Os             *SettingsActivationOs `xml:"os"`
-	Property       *SettingsActivationProperty `xml:"property"`
-	File           *SettingsActivationFile `xml:"file"`
+	ActiveByDefault bool                        `xml:"activeByDefault"`
+	Jdk             string                      `xml:"jdk"`
+	Os              *SettingsActivationOs       `xml:"os"`
+	Property        *SettingsActivationProperty `xml:"property"`
+	File            *SettingsActivationFile     `xml:"file"`
 }
 
 // SettingsActivationOs represents the operating system activation condition
@@ -129,10 +129,10 @@ type SettingsPropertyEntry struct {
 
 // SettingsRepository represents a repository configuration in settings
 type SettingsRepository struct {
-	Id        string               `xml:"id"`
-	Name      string               `xml:"name"`
-	URL       string               `xml:"url"`
-	Layout    string               `xml:"layout"`
+	Id        string              `xml:"id"`
+	Name      string              `xml:"name"`
+	URL       string              `xml:"url"`
+	Layout    string              `xml:"layout"`
 	Releases  *SettingsRepoPolicy `xml:"releases"`
 	Snapshots *SettingsRepoPolicy `xml:"snapshots"`
 }

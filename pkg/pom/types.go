@@ -4,34 +4,34 @@ import "encoding/xml"
 
 // Project represents the root structure of a Maven POM file
 type Project struct {
-	XMLName          xml.Name     `xml:"project"`
-	ModelVersion     string       `xml:"modelVersion"`
-	GroupId          string       `xml:"groupId"`
-	ArtifactId       string       `xml:"artifactId"`
-	Version          string       `xml:"version"`
-	Packaging        string       `xml:"packaging"`
-	Name             string       `xml:"name"`
-	Description      string       `xml:"description"`
-	URL              string       `xml:"url"`
-	InceptionYear    string       `xml:"inceptionYear"`
-	Parent           *Parent      `xml:"parent"`
-	Properties       *Properties  `xml:"properties"`
-	Dependencies     *Dependencies `xml:"dependencies"`
-	DependencyManagement *DependencyManagement `xml:"dependencyManagement"`
-	Modules          *Modules     `xml:"modules"`
-	Build            *Build       `xml:"build"`
-	Profiles         *Profiles    `xml:"profiles"`
-	Repositories     *Repositories `xml:"repositories"`
-	PluginRepositories *Repositories `xml:"pluginRepositories"`
-	CiManagement     *CiManagement `xml:"ciManagement"`
-	Scm              *Scm         `xml:"scm"`
-	IssueManagement  *IssueManagement `xml:"issueManagement"`
-	Organization     *Organization `xml:"organization"`
-	Licenses         *Licenses    `xml:"licenses"`
-	Developers       *Developers  `xml:"developers"`
-	Contributors     *Contributors `xml:"contributors"`
-	MailingLists     *MailingLists `xml:"mailingLists"`
-	Prerequisites    *Prerequisites `xml:"prerequisites"`
+	XMLName                xml.Name                `xml:"project"`
+	ModelVersion           string                  `xml:"modelVersion"`
+	GroupId                string                  `xml:"groupId"`
+	ArtifactId             string                  `xml:"artifactId"`
+	Version                string                  `xml:"version"`
+	Packaging              string                  `xml:"packaging"`
+	Name                   string                  `xml:"name"`
+	Description            string                  `xml:"description"`
+	URL                    string                  `xml:"url"`
+	InceptionYear          string                  `xml:"inceptionYear"`
+	Parent                 *Parent                 `xml:"parent"`
+	Properties             *Properties             `xml:"properties"`
+	Dependencies           *Dependencies           `xml:"dependencies"`
+	DependencyManagement   *DependencyManagement   `xml:"dependencyManagement"`
+	Modules                *Modules                `xml:"modules"`
+	Build                  *Build                  `xml:"build"`
+	Profiles               *Profiles               `xml:"profiles"`
+	Repositories           *Repositories           `xml:"repositories"`
+	PluginRepositories     *Repositories           `xml:"pluginRepositories"`
+	CiManagement           *CiManagement           `xml:"ciManagement"`
+	Scm                    *Scm                    `xml:"scm"`
+	IssueManagement        *IssueManagement        `xml:"issueManagement"`
+	Organization           *Organization           `xml:"organization"`
+	Licenses               *Licenses               `xml:"licenses"`
+	Developers             *Developers             `xml:"developers"`
+	Contributors           *Contributors           `xml:"contributors"`
+	MailingLists           *MailingLists           `xml:"mailingLists"`
+	Prerequisites          *Prerequisites          `xml:"prerequisites"`
 	DistributionManagement *DistributionManagement `xml:"distributionManagement"`
 }
 
@@ -56,13 +56,13 @@ type PropertyEntry struct {
 
 // Dependency represents a Maven dependency
 type Dependency struct {
-	GroupId    string `xml:"groupId"`
-	ArtifactId string `xml:"artifactId"`
-	Version    string `xml:"version"`
-	Type       string `xml:"type"`
-	Scope      string `xml:"scope"`
-	Classifier string `xml:"classifier"`
-	Optional   bool   `xml:"optional"`
+	GroupId    string      `xml:"groupId"`
+	ArtifactId string      `xml:"artifactId"`
+	Version    string      `xml:"version"`
+	Type       string      `xml:"type"`
+	Scope      string      `xml:"scope"`
+	Classifier string      `xml:"classifier"`
+	Optional   bool        `xml:"optional"`
 	Exclusions *Exclusions `xml:"exclusions"`
 }
 
@@ -94,27 +94,27 @@ type Modules struct {
 
 // Build represents the build configuration
 type Build struct {
-	DefaultGoal    string       `xml:"defaultGoal"`
-	SourceDirectory string      `xml:"sourceDirectory"`
-	TestSourceDirectory string   `xml:"testSourceDirectory"`
-	Resources      *Resources  `xml:"resources"`
-	TestResources  *Resources  `xml:"testResources"`
-	Plugins        *Plugins    `xml:"plugins"`
-	PluginManagement *PluginManagement `xml:"pluginManagement"`
-	Filters        *Filters     `xml:"filters"`
-	FinalName      string      `xml:"finalName"`
-	Directory      string      `xml:"directory"`
-	OutputDirectory string     `xml:"outputDirectory"`
-	TestOutputDirectory string  `xml:"testOutputDirectory"`
+	DefaultGoal         string            `xml:"defaultGoal"`
+	SourceDirectory     string            `xml:"sourceDirectory"`
+	TestSourceDirectory string            `xml:"testSourceDirectory"`
+	Resources           *Resources        `xml:"resources"`
+	TestResources       *Resources        `xml:"testResources"`
+	Plugins             *Plugins          `xml:"plugins"`
+	PluginManagement    *PluginManagement `xml:"pluginManagement"`
+	Filters             *Filters          `xml:"filters"`
+	FinalName           string            `xml:"finalName"`
+	Directory           string            `xml:"directory"`
+	OutputDirectory     string            `xml:"outputDirectory"`
+	TestOutputDirectory string            `xml:"testOutputDirectory"`
 }
 
 // Resource represents the resource file configuration
 type Resource struct {
-	Directory    string   `xml:"directory"`
-	TargetPath   string   `xml:"targetPath"`
-	Filtering    bool     `xml:"filtering"`
-	Includes     *Includes `xml:"includes"`
-	Excludes     *Excludes `xml:"excludes"`
+	Directory  string    `xml:"directory"`
+	TargetPath string    `xml:"targetPath"`
+	Filtering  bool      `xml:"filtering"`
+	Includes   *Includes `xml:"includes"`
+	Excludes   *Excludes `xml:"excludes"`
 }
 
 // Resources represents the resource list
@@ -134,14 +134,14 @@ type Excludes struct {
 
 // Plugin represents a Maven plugin
 type Plugin struct {
-	GroupId      string     `xml:"groupId"`
-	ArtifactId  string     `xml:"artifactId"`
-	Version     string     `xml:"version"`
-	Extensions  bool       `xml:"extensions"`
-	Inherited   bool       `xml:"inherited"`
+	GroupId       string         `xml:"groupId"`
+	ArtifactId    string         `xml:"artifactId"`
+	Version       string         `xml:"version"`
+	Extensions    bool           `xml:"extensions"`
+	Inherited     bool           `xml:"inherited"`
 	Configuration *Configuration `xml:"configuration"`
-	Executions  *Executions `xml:"executions"`
-	Dependencies *Dependencies `xml:"dependencies"`
+	Executions    *Executions    `xml:"executions"`
+	Dependencies  *Dependencies  `xml:"dependencies"`
 }
 
 // Configuration represents the plugin configuration (generic XML structure)
@@ -152,16 +152,16 @@ type Configuration struct {
 // ConfigElement represents a configuration element
 type ConfigElement struct {
 	XMLName  xml.Name
-	Content  string    `xml:",chardata"`
+	Content  string          `xml:",chardata"`
 	Children []ConfigElement `xml:",any"`
 }
 
 // Execution represents a plugin execution
 type Execution struct {
-	Id            string       `xml:"id"`
-	Phase         string       `xml:"phase"`
-	Goals         *Goals       `xml:"goals"`
-	Inherited     bool         `xml:"inherited"`
+	Id            string         `xml:"id"`
+	Phase         string         `xml:"phase"`
+	Goals         *Goals         `xml:"goals"`
+	Inherited     bool           `xml:"inherited"`
 	Configuration *Configuration `xml:"configuration"`
 }
 
@@ -192,36 +192,36 @@ type Filters struct {
 
 // Profile represents a Maven Profile
 type Profile struct {
-	Id             string       `xml:"id"`
-	Activation     *Activation  `xml:"activation"`
-	Properties     *Properties  `xml:"properties"`
-	Dependencies   *Dependencies `xml:"dependencies"`
+	Id                   string                `xml:"id"`
+	Activation           *Activation           `xml:"activation"`
+	Properties           *Properties           `xml:"properties"`
+	Dependencies         *Dependencies         `xml:"dependencies"`
 	DependencyManagement *DependencyManagement `xml:"dependencyManagement"`
-	Modules        *Modules     `xml:"modules"`
-	Build          *ProfileBuild `xml:"build"`
-	Repositories   *Repositories `xml:"repositories"`
-	PluginRepositories *Repositories `xml:"pluginRepositories"`
-	Reports        *Reports     `xml:"reports"`
-	Reporting      *Reporting   `xml:"reporting"`
+	Modules              *Modules              `xml:"modules"`
+	Build                *ProfileBuild         `xml:"build"`
+	Repositories         *Repositories         `xml:"repositories"`
+	PluginRepositories   *Repositories         `xml:"pluginRepositories"`
+	Reports              *Reports              `xml:"reports"`
+	Reporting            *Reporting            `xml:"reporting"`
 }
 
 // ProfileBuild represents the build configuration within a Profile
 type ProfileBuild struct {
-	DefaultGoal    string       `xml:"defaultGoal"`
-	Resources      *Resources   `xml:"resources"`
-	TestResources  *Resources   `xml:"testResources"`
-	Plugins        *Plugins     `xml:"plugins"`
+	DefaultGoal      string            `xml:"defaultGoal"`
+	Resources        *Resources        `xml:"resources"`
+	TestResources    *Resources        `xml:"testResources"`
+	Plugins          *Plugins          `xml:"plugins"`
 	PluginManagement *PluginManagement `xml:"pluginManagement"`
-	Filters        *Filters     `xml:"filters"`
+	Filters          *Filters          `xml:"filters"`
 }
 
 // Activation represents the Profile activation condition
 type Activation struct {
-	ActiveByDefault bool           `xml:"activeByDefault"`
-	Jdk            string         `xml:"jdk"`
-	Os             *ActivationOs  `xml:"os"`
-	Property       *ActivationProperty `xml:"property"`
-	File           *ActivationFile `xml:"file"`
+	ActiveByDefault bool                `xml:"activeByDefault"`
+	Jdk             string              `xml:"jdk"`
+	Os              *ActivationOs       `xml:"os"`
+	Property        *ActivationProperty `xml:"property"`
+	File            *ActivationFile     `xml:"file"`
 }
 
 // ActivationOs represents the operating system activation condition
@@ -240,8 +240,8 @@ type ActivationProperty struct {
 
 // ActivationFile represents the file activation condition
 type ActivationFile struct {
-	Exists    string `xml:"exists"`
-	Missing   string `xml:"missing"`
+	Exists  string `xml:"exists"`
+	Missing string `xml:"missing"`
 }
 
 // Profiles represents the Profile list
@@ -251,10 +251,10 @@ type Profiles struct {
 
 // Repository represents a Maven repository
 type Repository struct {
-	Id        string       `xml:"id"`
-	Name      string       `xml:"name"`
-	URL       string       `xml:"url"`
-	Layout    string       `xml:"layout"`
+	Id        string      `xml:"id"`
+	Name      string      `xml:"name"`
+	URL       string      `xml:"url"`
+	Layout    string      `xml:"layout"`
 	Releases  *RepoPolicy `xml:"releases"`
 	Snapshots *RepoPolicy `xml:"snapshots"`
 }
@@ -281,9 +281,9 @@ type Scm struct {
 
 // CiManagement represents the CI management information
 type CiManagement struct {
-	System    string       `xml:"system"`
-	URL       string       `xml:"url"`
-	Notifiers *Notifiers   `xml:"notifiers"`
+	System    string     `xml:"system"`
+	URL       string     `xml:"url"`
+	Notifiers *Notifiers `xml:"notifiers"`
 }
 
 // Notifiers represents the notifier list
@@ -293,12 +293,12 @@ type Notifiers struct {
 
 // Notifier represents a notifier
 type Notifier struct {
-	Type          string `xml:"type"`
-	SendOnError   bool   `xml:"sendOnError"`
-	SendOnFailure bool   `xml:"sendOnFailure"`
-	SendOnSuccess bool   `xml:"sendOnSuccess"`
-	SendOnWarning bool   `xml:"sendOnWarning"`
-	Address       string `xml:"address"`
+	Type          string         `xml:"type"`
+	SendOnError   bool           `xml:"sendOnError"`
+	SendOnFailure bool           `xml:"sendOnFailure"`
+	SendOnSuccess bool           `xml:"sendOnSuccess"`
+	SendOnWarning bool           `xml:"sendOnWarning"`
+	Address       string         `xml:"address"`
 	Configuration *Configuration `xml:"configuration"`
 }
 
@@ -316,10 +316,10 @@ type Organization struct {
 
 // License represents the license information
 type License struct {
-	Name string `xml:"name"`
-	URL  string `xml:"url"`
+	Name         string `xml:"name"`
+	URL          string `xml:"url"`
 	Distribution string `xml:"distribution"`
-	Comments string `xml:"comments"`
+	Comments     string `xml:"comments"`
 }
 
 // Licenses represents the license list
@@ -329,14 +329,14 @@ type Licenses struct {
 
 // Developer represents the developer information
 type Developer struct {
-	Id    string `xml:"id"`
-	Name  string `xml:"name"`
-	Email string `xml:"email"`
-	URL   string `xml:"url"`
-	Organization string `xml:"organization"`
+	Id              string `xml:"id"`
+	Name            string `xml:"name"`
+	Email           string `xml:"email"`
+	URL             string `xml:"url"`
+	Organization    string `xml:"organization"`
 	OrganizationURL string `xml:"organizationUrl"`
-	Roles *Roles `xml:"roles"`
-	Timezone string `xml:"timezone"`
+	Roles           *Roles `xml:"roles"`
+	Timezone        string `xml:"timezone"`
 }
 
 // Roles represents the role list
@@ -351,13 +351,13 @@ type Developers struct {
 
 // Contributor represents the contributor information
 type Contributor struct {
-	Name  string `xml:"name"`
-	Email string `xml:"email"`
-	URL   string `xml:"url"`
-	Organization string `xml:"organization"`
+	Name            string `xml:"name"`
+	Email           string `xml:"email"`
+	URL             string `xml:"url"`
+	Organization    string `xml:"organization"`
 	OrganizationURL string `xml:"organizationUrl"`
-	Roles *Roles `xml:"roles"`
-	Timezone string `xml:"timezone"`
+	Roles           *Roles `xml:"roles"`
+	Timezone        string `xml:"timezone"`
 }
 
 // Contributors represents the contributor list
@@ -367,11 +367,11 @@ type Contributors struct {
 
 // MailingList represents a mailing list
 type MailingList struct {
-	Name      string `xml:"name"`
-	Subscribe string `xml:"subscribe"`
-	Unsubscribe string `xml:"unsubscribe"`
-	Post      string `xml:"post"`
-	Archive   string `xml:"archive"`
+	Name          string         `xml:"name"`
+	Subscribe     string         `xml:"subscribe"`
+	Unsubscribe   string         `xml:"unsubscribe"`
+	Post          string         `xml:"post"`
+	Archive       string         `xml:"archive"`
 	OtherArchives *OtherArchives `xml:"otherArchives"`
 }
 
@@ -392,21 +392,21 @@ type Prerequisites struct {
 
 // DistributionManagement represents the distribution management
 type DistributionManagement struct {
-	Repository       *DeploymentRepository `xml:"repository"`
+	Repository         *DeploymentRepository `xml:"repository"`
 	SnapshotRepository *DeploymentRepository `xml:"snapshotRepository"`
-	Site             *Site              `xml:"site"`
-	DownloadURL      string             `xml:"downloadUrl"`
-	Relocation       *Relocation        `xml:"relocation"`
-	Status           string             `xml:"status"`
+	Site               *Site                 `xml:"site"`
+	DownloadURL        string                `xml:"downloadUrl"`
+	Relocation         *Relocation           `xml:"relocation"`
+	Status             string                `xml:"status"`
 }
 
 // DeploymentRepository represents a deployment repository
 type DeploymentRepository struct {
-	Id        string `xml:"id"`
-	Name      string `xml:"name"`
-	URL       string `xml:"url"`
-	Layout    string `xml:"layout"`
-	UniqueVersion bool `xml:"uniqueVersion"`
+	Id            string `xml:"id"`
+	Name          string `xml:"name"`
+	URL           string `xml:"url"`
+	Layout        string `xml:"layout"`
+	UniqueVersion bool   `xml:"uniqueVersion"`
 }
 
 // Site represents the site deployment information
@@ -425,30 +425,30 @@ type Relocation struct {
 }
 
 // Reports represents the report configuration
-type Reports struct {}
+type Reports struct{}
 
 // Reporting represents the report generation configuration
 type Reporting struct {
-	ExcludeDefaults bool    `xml:"excludeDefaults"`
-	OutputDirectory string  `xml:"outputDirectory"`
+	ExcludeDefaults bool           `xml:"excludeDefaults"`
+	OutputDirectory string         `xml:"outputDirectory"`
 	Plugins         *ReportPlugins `xml:"plugins"`
 }
 
 // ReportPlugin represents a report plugin
 type ReportPlugin struct {
-	GroupId      string       `xml:"groupId"`
-	ArtifactId  string       `xml:"artifactId"`
-	Version     string       `xml:"version"`
-	Inherited   bool         `xml:"inherited"`
+	GroupId       string         `xml:"groupId"`
+	ArtifactId    string         `xml:"artifactId"`
+	Version       string         `xml:"version"`
+	Inherited     bool           `xml:"inherited"`
 	Configuration *Configuration `xml:"configuration"`
-	ReportSets  *ReportSets  `xml:"reportSets"`
+	ReportSets    *ReportSets    `xml:"reportSets"`
 }
 
 // ReportSet represents a report set
 type ReportSet struct {
-	Id            string       `xml:"id"`
-	Reports       *Reports     `xml:"reports"`
-	Inherited     bool         `xml:"inherited"`
+	Id            string         `xml:"id"`
+	Reports       *Reports       `xml:"reports"`
+	Inherited     bool           `xml:"inherited"`
 	Configuration *Configuration `xml:"configuration"`
 }
 

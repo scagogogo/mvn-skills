@@ -2,13 +2,13 @@ package command
 
 // DependencyGetOption holds the options for the dependency:get goal
 type DependencyGetOption struct {
-	GroupId          string   // -DgroupId
-	ArtifactId       string   // -DartifactId
-	Version          string   // -Dversion
-	Classifier       string   // -Dclassifier (optional)
-	Type             string   // -Dtype (optional, e.g. "jar", "war", "pom")
+	GroupId            string   // -DgroupId
+	ArtifactId         string   // -DartifactId
+	Version            string   // -Dversion
+	Classifier         string   // -Dclassifier (optional)
+	Type               string   // -Dtype (optional, e.g. "jar", "war", "pom")
 	RemoteRepositories []string // -DremoteRepositories (optional)
-	Packaging        string   // alias for Type, for clarity
+	Packaging          string   // alias for Type, for clarity
 }
 
 // ToArgs converts DependencyGetOption to Maven command arguments

@@ -9,11 +9,11 @@ import (
 // MavenError represents an error from a failed Maven command execution
 // It contains command information and stderr output for easier diagnosis
 type MavenError struct {
-	Command   string   // The full command executed (e.g. "mvn clean install")
-	Args      []string // Command arguments
-	Stderr    string   // Maven's stderr output
-	ExitCode  int      // Process exit code (0 if not available)
-	Inner     error    // The original error
+	Command  string   // The full command executed (e.g. "mvn clean install")
+	Args     []string // Command arguments
+	Stderr   string   // Maven's stderr output
+	ExitCode int      // Process exit code (0 if not available)
+	Inner    error    // The original error
 }
 
 func (e *MavenError) Error() string {

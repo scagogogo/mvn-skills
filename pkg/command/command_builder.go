@@ -11,41 +11,41 @@ import (
 // CommandBuilder uses the builder pattern to construct and execute Maven commands
 // Provides a fluent API to set command options, safer and easier to use than directly concatenating strings
 type CommandBuilder struct {
-	executable       string
-	workingDirectory string
-	pomFile          string
-	settingsFile     string
-	globalSettings   string
-	profiles         []string
-	properties       map[string]string
-	projects         []string
-	alsoMake         bool
+	executable         string
+	workingDirectory   string
+	pomFile            string
+	settingsFile       string
+	globalSettings     string
+	profiles           []string
+	properties         map[string]string
+	projects           []string
+	alsoMake           bool
 	alsoMakeDependents bool
-	offline          bool
-	batchMode        bool
-	updateSnapshots  bool
-	skipTests        bool
-	mavenTestSkip    bool
-	showErrors       bool
-	debug            bool
-	quiet            bool
-	threads          int
-	nonRecursive     bool
-	resumeFrom       string
-	failAtEnd        bool
-	failNever        bool
-	failFast         bool
+	offline            bool
+	batchMode          bool
+	updateSnapshots    bool
+	skipTests          bool
+	mavenTestSkip      bool
+	showErrors         bool
+	debug              bool
+	quiet              bool
+	threads            int
+	nonRecursive       bool
+	resumeFrom         string
+	failAtEnd          bool
+	failNever          bool
+	failFast           bool
 	noTransferProgress bool
-	strictChecksums  bool
-	laxChecksums     bool
-	showVersion      bool
-	toolchains       string
-	stdin            io.Reader
-	stdout           io.Writer
-	stderr           io.Writer
-	goals            []string
-	env              []string
-	ctx              context.Context
+	strictChecksums    bool
+	laxChecksums       bool
+	showVersion        bool
+	toolchains         string
+	stdin              io.Reader
+	stdout             io.Writer
+	stderr             io.Writer
+	goals              []string
+	env                []string
+	ctx                context.Context
 }
 
 // NewCommandBuilder creates a new Maven command builder
@@ -497,7 +497,7 @@ func (b *CommandBuilder) RunForStdoutWithContext(ctx context.Context) (string, e
 
 // withGoal creates a copy and adds a goal without modifying the original builder
 func (b *CommandBuilder) withGoal(goal string) *CommandBuilder {
-	copy := *b // shallow copy
+	copy := *b                                  // shallow copy
 	copy.goals = append([]string{}, b.goals...) // deep copy goals slice
 	copy.goals = append(copy.goals, goal)
 	return &copy
@@ -505,7 +505,7 @@ func (b *CommandBuilder) withGoal(goal string) *CommandBuilder {
 
 // withGoals creates a copy and adds multiple goals without modifying the original builder
 func (b *CommandBuilder) withGoals(goals ...string) *CommandBuilder {
-	copy := *b // shallow copy
+	copy := *b                                  // shallow copy
 	copy.goals = append([]string{}, b.goals...) // deep copy goals slice
 	copy.goals = append(copy.goals, goals...)
 	return &copy
