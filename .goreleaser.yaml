@@ -1,0 +1,91 @@
+# GoReleaser configuration for mvn-skills Go SDK library
+# This is a library (not a CLI tool), so we focus on:
+# - Source archives
+# - Checksums
+# - Release notes generation
+# - Go module proxy verification
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  # Skip building binaries — this is a library, not a CLI tool
+  - skip: true
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+source:
+  enabled: true
+  name_template: '{{ .ProjectName }}-{{ .Version }}'
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+      - 'merge conflict'
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: '🚀 Features'
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: '🐛 Bug Fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: '🧹 Refactoring'
+      regexp: "^.*refactor[(\\w)]*:+.*$"
+      order: 2
+    - title: '📝 Documentation'
+      regexp: "^.*docs[(\\w)]*:+.*$"
+      order: 3
+    - title: '🔧 Other Changes'
+      order: 999
+
+release:
+  github:
+    owner: scagogogo
+    name: mvn-skills
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## mvn-skills - Maven SDK for Go
+
+    A Go SDK for conveniently operating Maven in Go applications.
+
+    ### Installation
+
+    ```bash
+    go get github.com/scagogogo/mvn-skills@{{ .Tag }}
+    ```
+
+    ### What's Changed
+  footer: |
+    ### Quick Start
+
+    ```go
+    import "github.com/scagogogo/mvn-skills/pkg/command"
+
+    // Simple usage
+    output, err := command.Clean("mvn")
+
+    // Builder pattern (recommended)
+    output, err := command.NewCommandBuilder().
+        WithBatchMode().
+        WithSkipTests().
+        CleanInstall()
+    ```
+
+    **Full Documentation**: https://scagogogo.github.io/mvn-skills/
