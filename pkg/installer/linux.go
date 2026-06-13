@@ -29,7 +29,7 @@ func tryPackageManagerLinux() (bool, string) {
 	if _, err := os.Stat("/etc/debian_version"); err == nil {
 		// Debian/Ubuntu
 		cmd := exec.Command("sudo", "apt-get", "update")
-		cmd.Run()
+		_ = cmd.Run()
 
 		cmd = exec.Command("sudo", "apt-get", "install", "-y", "maven")
 		if err := cmd.Run(); err == nil {
