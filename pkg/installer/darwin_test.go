@@ -1,3 +1,5 @@
+//go:build darwin
+
 package installer
 
 import (
@@ -6,80 +8,80 @@ import (
 	"testing"
 )
 
-// TestInstallMacOS 测试macOS平台的安装功能
-// 由于涉及真实的下载和安装，默认跳过此测试
+// TestInstallMacOS tests macOS platform installation
+// Since it involves real download and installation, this test is skipped by default
 func TestInstallMacOS(t *testing.T) {
-	// 默认跳过网络依赖测试，只有在环境变量指定时才运行
+	// Skip network-dependent tests by default, only run when env var is set
 	if os.Getenv("RUN_INTEGRATION_TESTS") == "" {
-		t.Skip("跳过macOS安装测试（设置RUN_INTEGRATION_TESTS=1来运行）")
+		t.Skip("Skipping macOS install test (set RUN_INTEGRATION_TESTS=1 to run)")
 	}
 
-	// 真实的集成测试
+	// Real integration test
 	mavenHome, err := InstallMacOS()
 	if err != nil {
-		t.Logf("安装Maven失败（可能是网络问题）: %v", err)
-		t.Skip("网络或安装问题，跳过此测试")
+		t.Logf("Maven installation failed (possibly network issue): %v", err)
+		t.Skip("Network or installation issue, skipping test")
 	}
 
-	// 验证安装路径
+	// Verify installation path
 	if mavenHome == "" {
-		t.Fatal("返回的Maven安装路径为空")
+		t.Fatal("Returned Maven installation path is empty")
 	}
 
-	// 验证bin/mvn可执行文件存在
+	// Verify bin/mvn executable exists
 	mvnPath := filepath.Join(mavenHome, "bin", "mvn")
 	_, err = os.Stat(mvnPath)
 	if err != nil {
-		t.Fatalf("未找到mvn可执行文件: %v", err)
+		t.Fatalf("mvn executable not found: %v", err)
 	}
 
-	t.Logf("Maven成功安装到: %s", mavenHome)
+	t.Logf("Maven successfully installed to: %s", mavenHome)
 }
 
-// TestSetMacOSEnvironmentVars 测试macOS环境变量设置
-// 此测试会创建一个临时目录，不会修改真实的环境配置文件
+// TestSetMacOSEnvironmentVars tests macOS environment variable setup
+// This test creates a temporary directory and does not modify real config files
 func TestSetMacOSEnvironmentVars(t *testing.T) {
-	// 创建临时目录作为测试的MAVEN_HOME
+	// Create temporary directory as test MAVEN_HOME
 	tempDir, err := os.MkdirTemp("", "maven-test")
 	if err != nil {
-		t.Fatalf("创建临时目录失败: %v", err)
+		t.Fatalf("Failed to create temp directory: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// 保存原始HOME环境变量，测试后恢复
+	// Save original HOME env var, restore after test
 	originalHome := os.Getenv("HOME")
 	defer os.Setenv("HOME", originalHome)
 
-	// 设置临时HOME环境变量，避免修改真实的配置文件
+	// Set temporary HOME env var to avoid modifying real config files
 	os.Setenv("HOME", tempDir)
 
-	// 测试环境变量设置函数
+	// Test environment variable setup function
 	err = setMacOSEnvironmentVars(tempDir + "/maven")
 	if err != nil {
-		t.Fatalf("设置环境变量失败: %v", err)
+		t.Fatalf("Failed to set environment variables: %v", err)
 	}
 
-	// 检查shell配置文件是否已创建
+	// Check if shell config files were created
 	shellFiles := []string{".zshrc", ".bash_profile"}
 	found := false
 
 	for _, file := range shellFiles {
 		path := filepath.Join(tempDir, file)
 		if _, err := os.Stat(path); err == nil {
-			// 读取文件内容并检查是否包含Maven环境变量设置
+			// Read file content and check if it contains Maven env var settings
 			content, err := os.ReadFile(path)
 			if err != nil {
-				t.Fatalf("读取配置文件失败: %v", err)
+				t.Fatalf("Failed to read config file: %v", err)
 			}
 
 			if len(content) > 0 {
 				found = true
-				t.Logf("在%s中找到Maven配置", file)
+				t.Logf("Found Maven config in %s", file)
 			}
 		}
 	}
 
 	if !found {
-		t.Fatal("未在任何shell配置文件中找到Maven环境变量设置")
+		t.Fatal("Maven environment variable settings not found in any shell config file")
 	}
 }
