@@ -10,20 +10,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// wrapperScriptName returns the platform-specific wrapper script name
+func wrapperScriptName() string {
+	if runtime.GOOS == "windows" {
+		return "mvnw.cmd"
+	}
+	return "mvnw"
+}
+
 func TestFindMavenWrapper(t *testing.T) {
-	// 创建临时目录模拟项目
 	tmpDir := t.TempDir()
 
-	// 目录中没有 mvnw
+	// No wrapper in the directory
 	_, err := FindMavenWrapper(tmpDir)
 	assert.Equal(t, ErrNotFoundMavenWrapper, err)
 
-	// 创建 mvnw 文件
-	wrapperPath := filepath.Join(tmpDir, "mvnw")
+	// Create the wrapper file with platform-specific name
+	scriptName := wrapperScriptName()
+	wrapperPath := filepath.Join(tmpDir, scriptName)
 	err = os.WriteFile(wrapperPath, []byte("#!/bin/sh\n"), 0644)
 	assert.Nil(t, err)
 
-	// 现在应该能找到
+	// Now it should be found
 	found, err := FindMavenWrapper(tmpDir)
 	assert.Nil(t, err)
 	assert.Equal(t, wrapperPath, found)
@@ -32,39 +40,42 @@ func TestFindMavenWrapper(t *testing.T) {
 func TestHasMavenWrapper(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	// 没有 mvnw
+	// No wrapper
 	assert.False(t, HasMavenWrapper(tmpDir))
 
-	// 创建 mvnw
-	wrapperPath := filepath.Join(tmpDir, "mvnw")
+	// Create wrapper with platform-specific name
+	scriptName := wrapperScriptName()
+	wrapperPath := filepath.Join(tmpDir, scriptName)
 	err := os.WriteFile(wrapperPath, []byte("#!/bin/sh\n"), 0644)
 	assert.Nil(t, err)
 
-	// 有 mvnw
+	// Has wrapper
 	assert.True(t, HasMavenWrapper(tmpDir))
 }
 
 func TestHasMavenWrapperWithDirectory(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	// 创建 mvnw 目录（不是文件）
-	wrapperDir := filepath.Join(tmpDir, "mvnw")
+	// Create a directory with the wrapper name (not a file)
+	scriptName := wrapperScriptName()
+	wrapperDir := filepath.Join(tmpDir, scriptName)
 	err := os.MkdirAll(wrapperDir, 0755)
 	assert.Nil(t, err)
 
-	// 目录不是有效的 wrapper
+	// A directory is not a valid wrapper
 	assert.False(t, HasMavenWrapper(tmpDir))
 }
 
 func TestFindBestMavenWithWrapper(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	// 创建 mvnw
-	wrapperPath := filepath.Join(tmpDir, "mvnw")
+	// Create wrapper with platform-specific name
+	scriptName := wrapperScriptName()
+	wrapperPath := filepath.Join(tmpDir, scriptName)
 	err := os.WriteFile(wrapperPath, []byte("#!/bin/sh\n"), 0644)
 	assert.Nil(t, err)
 
-	// 应该返回 wrapper（优先于系统 Maven）
+	// Should return the wrapper (preferred over system Maven)
 	maven, err := FindBestMaven(tmpDir)
 	assert.Nil(t, err)
 	assert.Equal(t, wrapperPath, maven)
@@ -73,8 +84,7 @@ func TestFindBestMavenWithWrapper(t *testing.T) {
 func TestFindBestMavenWithoutWrapper(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	// 没有 mvnw，回退到系统 Maven
-	// 这个测试在没有 Maven 的环境中会失败
+	// No wrapper, fall back to system Maven
 	maven, err := FindBestMaven(tmpDir)
 	if err != nil {
 		// System has no Maven — should be a NotFoundError
