@@ -1,4 +1,4 @@
-# mvn-skills — Maven SDK for Go
+# mvn-skills
 
 [![CI](https://github.com/scagogogo/mvn-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/scagogogo/mvn-skills/actions/workflows/ci.yml)
 [![Release](https://github.com/scagogogo/mvn-skills/actions/workflows/release.yml/badge.svg)](https://github.com/scagogogo/mvn-skills/actions/workflows/release.yml/badge.svg)
@@ -6,9 +6,81 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/scagogogo/mvn-skills)](https://goreportcard.com/report/github.com/scagogogo/mvn-skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Language**: [English](README.md) | [中文](README.zh.md)
+**Language**: [English](README.md) | [简体中文](README.zh.md)
 
-A Go SDK for conveniently operating Maven (`mvn`) in Go applications. It detects and uses the locally installed Maven to execute commands, parse POM files, manage settings, and more.
+A comprehensive toolkit for operating Maven (`mvn`) — supporting multiple integration methods: **Skills**, Go SDK, CLI, and MCP.
+
+## Integration Methods
+
+### 🎯 Skills (Claude Code Plugin)
+
+Add mvn-skills as a Claude Code skill with one click:
+
+```bash
+claude plugin marketplace add scagogogo/mvn-skills
+```
+
+Or use the community CLI:
+
+```bash
+npx skills add scagogogo/mvn-skills@maven-operations
+```
+
+Once installed, Claude Code can directly execute Maven commands, parse POM files, manage dependencies, install Maven, and automate Java project builds.
+
+<details>
+<summary>📋 One-click copy</summary>
+
+```bash
+# Add the marketplace
+claude plugin marketplace add scagogogo/mvn-skills
+
+# Then install the plugin
+claude plugin install maven-skills@mvn-skills
+```
+
+Or manual installation:
+
+```bash
+mkdir -p ~/.claude/skills/maven-operations
+git clone https://github.com/scagogogo/mvn-skills.git /tmp/mvn-skills-clone
+cp -r /tmp/mvn-skills-clone/plugins/maven-skills/skills/maven-operations/* ~/.claude/skills/maven-operations/
+rm -rf /tmp/mvn-skills-clone
+```
+
+</details>
+
+### 📦 Go SDK
+
+Use as a Go library in your applications:
+
+```bash
+go get github.com/scagogogo/mvn-skills@latest
+```
+
+```go
+import (
+    "github.com/scagogogo/mvn-skills/pkg/command"
+    "github.com/scagogogo/mvn-skills/pkg/finder"
+    "github.com/scagogogo/mvn-skills/pkg/pom"
+    "github.com/scagogogo/mvn-skills/pkg/settings"
+    "github.com/scagogogo/mvn-skills/pkg/installer"
+    "github.com/scagogogo/mvn-skills/pkg/local_repository"
+)
+```
+
+### 🖥️ CLI
+
+Use directly from the command line via releases:
+
+```bash
+# Download latest release
+curl -sL https://github.com/scagogogo/mvn-skills/releases/latest/download/mvn-skills-latest.tar.gz | tar -xz
+```
+
+### 🔌 MCP
+
+Integrate with AI assistants via the Model Context Protocol. The Go SDK can be wrapped as an MCP server to provide Maven operations to any MCP-compatible AI tool.
 
 ## Features
 
@@ -21,48 +93,16 @@ A Go SDK for conveniently operating Maven (`mvn`) in Go applications. It detects
 - 🏗️ **Context Support** — Cancel and timeout Maven commands via context.Context
 - 🖥️ **Cross-Platform** — Full Windows, macOS, and Linux support
 
-## Installation
-
-```bash
-go get github.com/scagogogo/mvn-skills
-```
-
-### Specific Version
-
-```bash
-go get github.com/scagogogo/mvn-skills@v0.2.0
-```
-
-### From Release
-
-Download the source archive from the [latest release](https://github.com/scagogogo/mvn-skills/releases/latest):
-
-```bash
-# Download and extract
-curl -sL https://github.com/scagogogo/mvn-skills/releases/latest/download/mvn-skills-latest.tar.gz | tar -xz
-cd mvn-skills-*/
-go mod download
-```
-
 ## Quick Start
 
 ### Find Maven
 
 ```go
-package main
-
-import (
-    "fmt"
-    "github.com/scagogogo/mvn-skills/pkg/finder"
-)
-
-func main() {
-    maven, err := finder.FindMaven()
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("Maven executable: %s\n", maven)
-}
+maven, err := finder.FindMaven()
+// Or find Maven Wrapper in a project directory:
+maven, err := finder.FindMavenWrapper("/path/to/project")
+// Or find the best available (wrapper preferred, system Maven fallback):
+maven, err := finder.FindBestMaven("/path/to/project")
 ```
 
 ### Execute Maven Commands
@@ -100,9 +140,6 @@ output, err := command.NewCommandBuilder().
 
 ```go
 project, err := pom.ParseFile("pom.xml")
-if err != nil {
-    panic(err)
-}
 fmt.Printf("GAV: %s:%s:%s\n", project.GroupId, project.ArtifactId, project.Version)
 ```
 
@@ -111,10 +148,6 @@ fmt.Printf("GAV: %s:%s:%s\n", project.GroupId, project.ArtifactId, project.Versi
 ```go
 output, _ := command.Version("mvn")
 v, err := command.ParseVersion(output)
-if err != nil {
-    panic(err)
-}
-fmt.Printf("Maven %d.%d.%d\n", v.Major, v.Minor, v.Patch)
 if v.IsAtLeast(3, 8, 0) {
     fmt.Println("Maven 3.8+ features available")
 }
@@ -141,7 +174,6 @@ if v.IsAtLeast(3, 8, 0) {
 | `WithQuiet()` | `-q` | Quiet mode |
 | `WithThreads(n)` | `-T` | Parallel threads |
 | `WithFailAtEnd()` | `-fae` | Fail at end |
-| `WithFailNever()` | `-fn` | Never fail |
 | `WithNoTransferProgress()` | `-ntp` | No download progress |
 | `WithEnv(...)` | — | Set environment variables |
 | `WithContext(ctx)` | — | Cancellation/timeout support |
@@ -163,7 +195,7 @@ builder.Validate()       // mvn validate
 ### Multi-Phase Convenience Methods
 
 ```go
-builder.CleanInstall()   // mvn clean install
+builder.CleanInstall()   // mvn clean install — most common CI build
 builder.CleanPackage()   // mvn clean package
 builder.CleanDeploy()    // mvn clean deploy
 builder.CleanVerify()    // mvn clean verify
@@ -172,7 +204,7 @@ builder.CleanTest()      // mvn clean test
 
 ### Structured Option Types
 
-For commands with many parameters, use structured option types:
+For commands with many parameters:
 
 ```go
 // Dependency get with options
@@ -233,11 +265,19 @@ if err != nil {
 
 Releases are automated via [GoReleaser](https://goreleaser.com/) and published to [GitHub Releases](https://github.com/scagogogo/mvn-skills/releases).
 
+### Use as Go Module
+
+```bash
+# Latest version
+go get github.com/scagogogo/mvn-skills@latest
+
+# Specific version
+go get github.com/scagogogo/mvn-skills@v0.1.0
+```
+
 ### Download a Release
 
-Each release includes:
-- **Source archive** — Full source code tarball
-- **Checksums** — SHA256 checksums for verification
+Each release includes source archives and SHA256 checksums for verification:
 
 ```bash
 # Download latest source archive
@@ -248,39 +288,10 @@ curl -sL https://github.com/scagogogo/mvn-skills/releases/latest/download/checks
 sha256sum -c checksums.txt --ignore-missing
 ```
 
-### Use as Go Module
-
-The recommended way to use this library is via Go modules:
-
-```bash
-# Latest version
-go get github.com/scagogogo/mvn-skills@latest
-
-# Specific version
-go get github.com/scagogogo/mvn-skills@v0.2.0
-
-# Specific commit
-go get github.com/scagogogo/mvn-skills@abc1234
-```
-
-### Import Paths
-
-```go
-import (
-    "github.com/scagogogo/mvn-skills/pkg/command"
-    "github.com/scagogogo/mvn-skills/pkg/finder"
-    "github.com/scagogogo/mvn-skills/pkg/installer"
-    "github.com/scagogogo/mvn-skills/pkg/pom"
-    "github.com/scagogogo/mvn-skills/pkg/settings"
-    "github.com/scagogogo/mvn-skills/pkg/local_repository"
-)
-```
-
 ## Documentation
 
-Full API documentation is available at:
-- 🌐 [https://scagogogo.github.io/mvn-skills/](https://scagogogo.github.io/mvn-skills/)
-- 📦 [pkg.go.dev/github.com/scagogogo/mvn-skills](https://pkg.go.dev/github.com/scagogogo/mvn-skills)
+- 🌐 [VitePress Documentation](https://scagogogo.github.io/mvn-skills/)
+- 📦 [Go Package Reference](https://pkg.go.dev/github.com/scagogogo/mvn-skills)
 
 ## Contributing
 

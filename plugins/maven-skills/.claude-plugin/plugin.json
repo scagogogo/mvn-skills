@@ -1,0 +1,9 @@
+{
+  "name": "maven-skills",
+  "version": "0.1.0",
+  "description": "Comprehensive Maven operations toolkit — execute builds, manage dependencies, parse POM/settings, install Maven, and automate Java project workflows",
+  "author": {
+    "name": "scagogogo",
+    "url": "https://github.com/scagogogo"
+  }
+}

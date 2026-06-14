@@ -1,0 +1,21 @@
+{
+  "name": "mvn-skills",
+  "owner": {
+    "name": "scagogogo",
+    "url": "https://github.com/scagogogo"
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "description": "Maven operations skills for Claude Code — execute Maven commands, parse POM files, manage settings, and automate Java project builds"
+  },
+  "plugins": [
+    {
+      "name": "maven-skills",
+      "description": "Comprehensive Maven operations toolkit — execute builds, manage dependencies, parse POM/settings, install Maven, and automate Java project workflows",
+      "source": "./plugins/maven-skills",
+      "skills": [
+        "./plugins/maven-skills/skills/maven-operations"
+      ]
+    }
+  ]
+}

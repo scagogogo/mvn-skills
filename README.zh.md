@@ -1,14 +1,86 @@
-# mvn-skills — Maven SDK for Go
+# mvn-skills
 
 [![CI](https://github.com/scagogogo/mvn-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/scagogogo/mvn-skills/actions/workflows/ci.yml)
 [![Release](https://github.com/scagogogo/mvn-skills/actions/workflows/release.yml/badge.svg)](https://github.com/scagogogo/mvn-skills/actions/workflows/release.yml/badge.svg)
 [![Go Reference](https://pkg.go.dev/badge/github.com/scagogogo/mvn-skills.svg)](https://pkg.go.dev/github.com/scagogogo/mvn-skills)
-[![Go Report Card](https://goreportcard.com/badge/github.com/scagogogo/mvn-skills.svg)](https://goreportcard.com/report/github.com/scagogogo/mvn-skills)
+[![Go Report Card](https://goreportcard.com/badge/github.com/scagogogo/mvn-skills)](https://goreportcard.com/report/github.com/scagogogo/mvn-skills)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**语言**: [English](README.md) | [中文](README.zh.md)
+**语言**: [English](README.md) | 简体中文
 
-用于方便的在Go中操作Maven（`mvn`）的SDK。会检测使用本地已经安装的Maven来执行命令、解析POM文件、管理配置等。
+用于操作Maven（`mvn`）的综合工具包 — 支持多种集成方式：**Skills**、Go SDK、CLI 和 MCP。
+
+## 集成方式
+
+### 🎯 Skills（Claude Code 插件）
+
+一键添加 mvn-skills 为 Claude Code 技能：
+
+```bash
+claude plugin marketplace add scagogogo/mvn-skills
+```
+
+或使用社区 CLI：
+
+```bash
+npx skills add scagogogo/mvn-skills@maven-operations
+```
+
+安装后，Claude Code 可以直接执行 Maven 命令、解析 POM 文件、管理依赖、安装 Maven 和自动化 Java 项目构建。
+
+<details>
+<summary>📋 一键复制</summary>
+
+```bash
+# 添加 marketplace
+claude plugin marketplace add scagogogo/mvn-skills
+
+# 然后安装插件
+claude plugin install maven-skills@mvn-skills
+```
+
+手动安装：
+
+```bash
+mkdir -p ~/.claude/skills/maven-operations
+git clone https://github.com/scagogogo/mvn-skills.git /tmp/mvn-skills-clone
+cp -r /tmp/mvn-skills-clone/plugins/maven-skills/skills/maven-operations/* ~/.claude/skills/maven-operations/
+rm -rf /tmp/mvn-skills-clone
+```
+
+</details>
+
+### 📦 Go SDK
+
+作为 Go 库在应用中使用：
+
+```bash
+go get github.com/scagogogo/mvn-skills@latest
+```
+
+```go
+import (
+    "github.com/scagogogo/mvn-skills/pkg/command"
+    "github.com/scagogogo/mvn-skills/pkg/finder"
+    "github.com/scagogogo/mvn-skills/pkg/pom"
+    "github.com/scagogogo/mvn-skills/pkg/settings"
+    "github.com/scagogogo/mvn-skills/pkg/installer"
+    "github.com/scagogogo/mvn-skills/pkg/local_repository"
+)
+```
+
+### 🖥️ CLI
+
+通过 Release 直接从命令行使用：
+
+```bash
+# 下载最新 Release
+curl -sL https://github.com/scagogogo/mvn-skills/releases/latest/download/mvn-skills-latest.tar.gz | tar -xz
+```
+
+### 🔌 MCP
+
+通过模型上下文协议与 AI 助手集成。Go SDK 可以封装为 MCP 服务器，为任何兼容 MCP 的 AI 工具提供 Maven 操作。
 
 ## 特性
 
@@ -21,48 +93,16 @@
 - 🏗️ **Context支持** — 通过context.Context取消和超时Maven命令
 - 🖥️ **跨平台** — 完整支持Windows、macOS和Linux
 
-## 安装
-
-```bash
-go get github.com/scagogogo/mvn-skills
-```
-
-### 指定版本
-
-```bash
-go get github.com/scagogogo/mvn-skills@v0.2.0
-```
-
-### 从Release下载
-
-从[最新Release](https://github.com/scagogogo/mvn-skills/releases/latest)下载源代码归档：
-
-```bash
-# 下载并解压
-curl -sL https://github.com/scagogogo/mvn-skills/releases/latest/download/mvn-skills-latest.tar.gz | tar -xz
-cd mvn-skills-*/
-go mod download
-```
-
 ## 快速开始
 
 ### 查找Maven
 
 ```go
-package main
-
-import (
-    "fmt"
-    "github.com/scagogogo/mvn-skills/pkg/finder"
-)
-
-func main() {
-    maven, err := finder.FindMaven()
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("Maven可执行文件: %s\n", maven)
-}
+maven, err := finder.FindMaven()
+// 或在项目目录中查找Maven Wrapper：
+maven, err := finder.FindMavenWrapper("/path/to/project")
+// 或查找最佳可用（优先Wrapper，回退系统Maven）：
+maven, err := finder.FindBestMaven("/path/to/project")
 ```
 
 ### 执行Maven命令
@@ -100,9 +140,6 @@ output, err := command.NewCommandBuilder().
 
 ```go
 project, err := pom.ParseFile("pom.xml")
-if err != nil {
-    panic(err)
-}
 fmt.Printf("GAV: %s:%s:%s\n", project.GroupId, project.ArtifactId, project.Version)
 ```
 
@@ -111,10 +148,6 @@ fmt.Printf("GAV: %s:%s:%s\n", project.GroupId, project.ArtifactId, project.Versi
 ```go
 output, _ := command.Version("mvn")
 v, err := command.ParseVersion(output)
-if err != nil {
-    panic(err)
-}
-fmt.Printf("Maven %d.%d.%d\n", v.Major, v.Minor, v.Patch)
 if v.IsAtLeast(3, 8, 0) {
     fmt.Println("Maven 3.8+ 特性可用")
 }
@@ -141,7 +174,6 @@ if v.IsAtLeast(3, 8, 0) {
 | `WithQuiet()` | `-q` | 静默模式 |
 | `WithThreads(n)` | `-T` | 并行线程数 |
 | `WithFailAtEnd()` | `-fae` | 最后才失败 |
-| `WithFailNever()` | `-fn` | 永不失败 |
 | `WithNoTransferProgress()` | `-ntp` | 不显示下载进度 |
 | `WithEnv(...)` | — | 设置环境变量 |
 | `WithContext(ctx)` | — | 取消/超时支持 |
@@ -163,7 +195,7 @@ builder.Validate()       // mvn validate
 ### 多阶段便捷方法
 
 ```go
-builder.CleanInstall()   // mvn clean install
+builder.CleanInstall()   // mvn clean install — 最常见的CI构建
 builder.CleanPackage()   // mvn clean package
 builder.CleanDeploy()    // mvn clean deploy
 builder.CleanVerify()    // mvn clean verify
@@ -172,7 +204,7 @@ builder.CleanTest()      // mvn clean test
 
 ### 结构化选项类型
 
-对于有多个参数的命令，使用结构化选项类型：
+对于有多个参数的命令：
 
 ```go
 // 带选项的依赖获取
@@ -233,11 +265,19 @@ if err != nil {
 
 Release通过[GoReleaser](https://goreleaser.com/)自动发布到[GitHub Releases](https://github.com/scagogogo/mvn-skills/releases)。
 
+### 作为Go模块使用
+
+```bash
+# 最新版本
+go get github.com/scagogogo/mvn-skills@latest
+
+# 指定版本
+go get github.com/scagogogo/mvn-skills@v0.1.0
+```
+
 ### 下载Release
 
-每个Release包含：
-- **源代码归档** — 完整源代码tarball
-- **校验和** — SHA256校验和用于验证
+每个Release包含源代码归档和SHA256校验和：
 
 ```bash
 # 下载最新源代码归档
@@ -248,39 +288,10 @@ curl -sL https://github.com/scagogogo/mvn-skills/releases/latest/download/checks
 sha256sum -c checksums.txt --ignore-missing
 ```
 
-### 作为Go模块使用
-
-推荐使用Go模块方式：
-
-```bash
-# 最新版本
-go get github.com/scagogogo/mvn-skills@latest
-
-# 指定版本
-go get github.com/scagogogo/mvn-skills@v0.2.0
-
-# 指定commit
-go get github.com/scagogogo/mvn-skills@abc1234
-```
-
-### 导入路径
-
-```go
-import (
-    "github.com/scagogogo/mvn-skills/pkg/command"
-    "github.com/scagogogo/mvn-skills/pkg/finder"
-    "github.com/scagogogo/mvn-skills/pkg/installer"
-    "github.com/scagogogo/mvn-skills/pkg/pom"
-    "github.com/scagogogo/mvn-skills/pkg/settings"
-    "github.com/scagogogo/mvn-skills/pkg/local_repository"
-)
-```
-
 ## 文档
 
-完整API文档可在以下地址访问：
-- 🌐 [https://scagogogo.github.io/mvn-skills/](https://scagogogo.github.io/mvn-skills/)
-- 📦 [pkg.go.dev/github.com/scagogogo/mvn-skills](https://pkg.go.dev/github.com/scagogogo/mvn-skills)
+- 🌐 [VitePress文档](https://scagogogo.github.io/mvn-skills/)
+- 📦 [Go包参考](https://pkg.go.dev/github.com/scagogogo/mvn-skills)
 
 ## 贡献
 
