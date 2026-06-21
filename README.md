@@ -8,40 +8,38 @@
 
 **Language**: [English](README.md) | [简体中文](README.zh.md)
 
-A comprehensive toolkit for operating Maven (`mvn`) — supporting multiple integration methods: **Skills**, Go SDK, CLI, and MCP.
+Maven operations toolkit for AI agents and Go applications — execute builds, parse POM files, manage dependencies, install Maven, and automate Java project workflows.
 
-## Integration Methods
+---
 
-### 🎯 Skills (Claude Code Plugin)
+## Install
 
-Add mvn-skills as a Claude Code skill with one click:
+### 🤖 AI Agents (Claude Code / OpenCode)
 
 ```bash
+# 1. Add the marketplace
 claude plugin marketplace add scagogogo/mvn-skills
+
+# 2. Install the plugin
+claude plugin install maven-skills@mvn-skills
 ```
 
-Or use the community CLI:
+Or use the community CLI ([skills](https://github.com/vercel-labs/skills)):
 
 ```bash
 npx skills add scagogogo/mvn-skills@maven-operations
 ```
 
-Once installed, Claude Code can directly execute Maven commands, parse POM files, manage dependencies, install Maven, and automate Java project builds.
+Done! Your AI agent can now run Maven commands, parse POM files, manage dependencies, and install Maven.
 
 <details>
-<summary>📋 One-click copy</summary>
+<summary>📋 Manual install (if marketplace is unavailable)</summary>
 
 ```bash
-# Add the marketplace
-claude plugin marketplace add scagogogo/mvn-skills
+# Option A: Load for current session only (no install)
+claude --plugin-dir /path/to/mvn-skills/plugins/maven-skills
 
-# Then install the plugin
-claude plugin install maven-skills@mvn-skills
-```
-
-Or manual installation:
-
-```bash
+# Option B: Copy to user skills directory (persistent)
 mkdir -p ~/.claude/skills/maven-operations
 git clone https://github.com/scagogogo/mvn-skills.git /tmp/mvn-skills-clone
 cp -r /tmp/mvn-skills-clone/plugins/maven-skills/skills/maven-operations/* ~/.claude/skills/maven-operations/
@@ -50,64 +48,70 @@ rm -rf /tmp/mvn-skills-clone
 
 </details>
 
-### 📦 Go SDK
-
-Use as a Go library in your applications:
+### 📦 Go Applications
 
 ```bash
 go get github.com/scagogogo/mvn-skills@latest
 ```
 
 ```go
+package main
+
 import (
+    "fmt"
     "github.com/scagogogo/mvn-skills/pkg/command"
     "github.com/scagogogo/mvn-skills/pkg/finder"
     "github.com/scagogogo/mvn-skills/pkg/pom"
-    "github.com/scagogogo/mvn-skills/pkg/settings"
-    "github.com/scagogogo/mvn-skills/pkg/installer"
-    "github.com/scagogogo/mvn-skills/pkg/local_repository"
 )
+
+func main() {
+    // Find Maven
+    mvn, _ := finder.FindMaven()
+
+    // Run a build
+    output, _ := command.NewCommandBuilder().
+        WithExecutable(mvn).       // use the found Maven
+        WithBatchMode().
+        WithSkipTests().
+        CleanInstall()
+
+    // Parse a POM file
+    project, _ := pom.ParseFile("pom.xml")
+    fmt.Printf("%s:%s:%s\n", project.GroupId, project.ArtifactId, project.Version)
+}
 ```
 
-### 🖥️ CLI
-
-Use directly from the command line via releases:
+### 🖥️ CLI (Standalone Binary)
 
 ```bash
-# Download latest release
+# Download the latest release
 curl -sL https://github.com/scagogogo/mvn-skills/releases/latest/download/mvn-skills-latest.tar.gz | tar -xz
 ```
 
-### 🔌 MCP
+### 🔌 MCP Server
 
-Integrate with AI assistants via the Model Context Protocol. The Go SDK can be wrapped as an MCP server to provide Maven operations to any MCP-compatible AI tool.
+Wrap the Go SDK as an MCP server to provide Maven operations to any MCP-compatible AI tool. See the [documentation site](https://scagogogo.github.io/mvn-skills/) for setup details.
 
-## Features
+---
 
-- 🔍 **Maven Finder** — Auto-detect Maven from PATH, M2_HOME, or Maven Wrapper
-- 📦 **Command Builder** — Fluent API with 30+ Maven CLI options
-- 📄 **POM Parser** — Parse and analyze pom.xml files
-- ⚙️ **Settings Parser** — Parse Maven settings.xml
-- 🗂️ **Local Repository** — Navigate and search the local Maven repository
-- 📥 **Maven Installer** — Download and install Maven on Linux/macOS/Windows
-- 🏗️ **Context Support** — Cancel and timeout Maven commands via context.Context
-- 🖥️ **Cross-Platform** — Full Windows, macOS, and Linux support
-
-## Quick Start
+## Go SDK Examples
 
 ### Find Maven
 
 ```go
+// Find system Maven
 maven, err := finder.FindMaven()
-// Or find Maven Wrapper in a project directory:
+
+// Find Maven Wrapper in a project
 maven, err := finder.FindMavenWrapper("/path/to/project")
-// Or find the best available (wrapper preferred, system Maven fallback):
+
+// Best available (wrapper preferred, system Maven fallback)
 maven, err := finder.FindBestMaven("/path/to/project")
 ```
 
 ### Execute Maven Commands
 
-**Simple (standalone functions):**
+**Simple one-liners:**
 
 ```go
 output, err := command.Clean("mvn")
@@ -122,10 +126,17 @@ output, err := command.NewCommandBuilder().
     WithWorkingDirectory("/path/to/project").
     WithBatchMode().
     WithSkipTests().
-    CleanInstall()
+    CleanInstall()   // mvn clean install
 ```
 
-### Context & Cancellation
+### Parse POM Files
+
+```go
+project, err := pom.ParseFile("pom.xml")
+fmt.Printf("GAV: %s:%s:%s\n", project.GroupId, project.ArtifactId, project.Version)
+```
+
+### Timeout & Cancellation
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -136,24 +147,34 @@ output, err := command.NewCommandBuilder().
     CleanDeploy()
 ```
 
-### Parse POM Files
-
-```go
-project, err := pom.ParseFile("pom.xml")
-fmt.Printf("GAV: %s:%s:%s\n", project.GroupId, project.ArtifactId, project.Version)
-```
-
-### Parse Maven Version
+### Check Maven Version
 
 ```go
 output, _ := command.Version("mvn")
-v, err := command.ParseVersion(output)
+v, _ := command.ParseVersion(output)
 if v.IsAtLeast(3, 8, 0) {
     fmt.Println("Maven 3.8+ features available")
 }
 ```
 
-## API Overview
+---
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| 🔍 **Maven Finder** | Auto-detect Maven from PATH, M2_HOME, or Maven Wrapper |
+| 📦 **Command Builder** | Fluent API with 30+ Maven CLI options |
+| 📄 **POM Parser** | Parse and analyze pom.xml files |
+| ⚙️ **Settings Parser** | Parse Maven settings.xml |
+| 🗂️ **Local Repository** | Navigate and search the local Maven repository |
+| 📥 **Maven Installer** | Download and install Maven on Linux/macOS/Windows |
+| 🏗️ **Context Support** | Cancel and timeout Maven commands via context.Context |
+| 🖥️ **Cross-Platform** | Full Windows, macOS, and Linux support |
+
+---
+
+## Go API Reference
 
 ### Command Builder Options
 
@@ -178,7 +199,7 @@ if v.IsAtLeast(3, 8, 0) {
 | `WithEnv(...)` | — | Set environment variables |
 | `WithContext(ctx)` | — | Cancellation/timeout support |
 
-### Lifecycle Convenience Methods
+### Lifecycle Methods
 
 ```go
 builder.Clean()          // mvn clean
@@ -188,26 +209,27 @@ builder.Package()        // mvn package
 builder.Verify()         // mvn verify
 builder.Install()        // mvn install
 builder.Deploy()         // mvn deploy
-builder.Site()           // mvn site
-builder.Validate()       // mvn validate
 ```
 
-### Multi-Phase Convenience Methods
+### Multi-Phase Shortcuts
 
 ```go
-builder.CleanInstall()   // mvn clean install — most common CI build
+builder.CleanInstall()   // mvn clean install  ← most common CI build
 builder.CleanPackage()   // mvn clean package
 builder.CleanDeploy()    // mvn clean deploy
 builder.CleanVerify()    // mvn clean verify
 builder.CleanTest()      // mvn clean test
 ```
 
-### Structured Option Types
+<details>
+<summary>📖 Structured Options & Error Handling</summary>
+
+### Structured Options
 
 For commands with many parameters:
 
 ```go
-// Dependency get with options
+// Download an artifact
 opts := &command.DependencyGetOption{
     GroupId:    "joda-time",
     ArtifactId: "joda-time",
@@ -216,7 +238,7 @@ opts := &command.DependencyGetOption{
 }
 output, err := command.DependencyGetWithOptions("mvn", opts)
 
-// Deploy file with options
+// Deploy a file
 deployOpts := &command.DeployDeployFileOption{
     File:         "target/my-app.jar",
     PomFile:      "pom.xml",
@@ -225,7 +247,7 @@ deployOpts := &command.DeployDeployFileOption{
 }
 output, err := command.DeployDeployFileWithOptions("mvn", deployOpts)
 
-// Install artifact with flexible packaging
+// Install a local artifact
 installOpts := &command.InstallFileOption{
     File:       "my-app.war",
     GroupId:    "com.example",
@@ -250,7 +272,9 @@ if err != nil {
 }
 ```
 
-## Packages
+</details>
+
+### Packages
 
 | Package | Description |
 |---------|-------------|
@@ -261,32 +285,23 @@ if err != nil {
 | `pkg/settings` | Parse Maven settings.xml files |
 | `pkg/local_repository` | Navigate and search local Maven repository |
 
+---
+
 ## Releases
 
 Releases are automated via [GoReleaser](https://goreleaser.com/) and published to [GitHub Releases](https://github.com/scagogogo/mvn-skills/releases).
 
-### Use as Go Module
-
 ```bash
-# Latest version
-go get github.com/scagogogo/mvn-skills@latest
-
 # Specific version
 go get github.com/scagogogo/mvn-skills@v0.1.0
-```
 
-### Download a Release
-
-Each release includes source archives and SHA256 checksums for verification:
-
-```bash
-# Download latest source archive
+# Download and verify a release binary
 curl -sL https://github.com/scagogogo/mvn-skills/releases/latest/download/mvn-skills-latest.tar.gz -o mvn-skills.tar.gz
-
-# Verify checksum
 curl -sL https://github.com/scagogogo/mvn-skills/releases/latest/download/checksums.txt -o checksums.txt
 sha256sum -c checksums.txt --ignore-missing
 ```
+
+---
 
 ## Documentation
 
@@ -303,4 +318,4 @@ sha256sum -c checksums.txt --ignore-missing
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+MIT — see the [LICENSE](LICENSE) file for details.
