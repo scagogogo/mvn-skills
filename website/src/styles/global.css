@@ -1,0 +1,139 @@
+/* Global styles for mvn-skills website */
+/* Flat design: no purple, no gradients, small border-radius, Slate palette */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #0F172A;
+  background-color: #FFFFFF;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: #2563EB;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+a:hover {
+  color: #1D4ED8;
+}
+
+code {
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", Menlo, Monaco, Consolas, monospace;
+  background: #F1F5F9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #0F172A;
+}
+
+pre code {
+  display: block;
+  padding: 16px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+/* AntDesign overrides — flat design */
+.ant-btn {
+  border-radius: 4px !important;
+  font-weight: 500;
+  box-shadow: none !important;
+}
+
+.ant-btn-primary {
+  box-shadow: none !important;
+}
+
+.ant-btn-primary:hover {
+  box-shadow: none !important;
+}
+
+.ant-card {
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+.ant-tag {
+  border-radius: 2px !important;
+}
+
+.ant-input {
+  border-radius: 4px !important;
+}
+
+.ant-tabs-tab {
+  border-radius: 4px 4px 0 0 !important;
+}
+
+.ant-table {
+  border-radius: 4px !important;
+}
+
+.ant-table-thead > tr > th {
+  background: #F8FAFC !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #F1F5F9 !important;
+}
+
+.ant-layout-header {
+  line-height: 64px !important;
+}
+
+/* Feature card — flat hover: border change only, no translateY */
+.feature-card {
+  transition: border-color 0.15s;
+}
+
+.feature-card:hover {
+  border-color: #2563EB !important;
+}
+
+/* Section spacing */
+.section {
+  padding: 80px 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Code block — Slate-800 background, no shadow */
+.code-block {
+  background: #1E293B;
+  color: #E2E8F0;
+  border-radius: 4px;
+  padding: 20px 24px;
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: auto;
+  box-shadow: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .section {
+    padding: 48px 0;
+  }
+
+  .container {
+    padding: 0 16px;
+  }
+}
