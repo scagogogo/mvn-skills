@@ -287,6 +287,30 @@ if err != nil {
 
 ---
 
+## Maven Installer
+
+`pkg/installer` automates Maven installation across Windows, macOS, and Linux with sensible defaults:
+
+- **Cross-platform**: Windows (`.zip`), macOS/Linux (`.tar.gz`), with platform-specific PATH configuration
+- **Package managers first**: On Linux tries `apt-get`/`dnf`/`yum`/`apk`/`pacman`/`zypper`; on macOS tries Homebrew — falls back to binary download
+- **Mirror fallback**: Official Apache + regional mirrors (Aliyun, Tsinguna) for fast downloads in China
+- **SHA512 verification**: Every download is checksum-verified
+- **Idempotent**: Skips download if a usable Maven is already installed
+- **Retry with backoff**: Per-mirror retries on transient failures
+
+```go
+// Simple — zero config
+mavenHome, err := installer.Install()
+
+// Configurable — pin version, custom mirrors, skip env setup
+opts := installer.InstallOptions{
+    Version:    "3.9.11",
+    Mirrors:    installer.DefaultMirrors,
+    MaxRetries: 3,
+}
+mavenHome, err := installer.InstallWithOptions(opts)
+```
+
 ## Releases
 
 Releases are automated via [GoReleaser](https://goreleaser.com/) and published to [GitHub Releases](https://github.com/scagogogo/mvn-skills/releases).

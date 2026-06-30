@@ -2,8 +2,12 @@ package installer
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"crypto/sha512"
+	"encoding/hex"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,7 +15,7 @@ import (
 	"testing"
 )
 
-// 测试用的小型Maven结构
+// mockMaven describes the small Maven tree placed inside test archives.
 type mockMaven struct {
 	Version   string
 	BinFiles  []string
@@ -19,220 +23,256 @@ type mockMaven struct {
 	ConfFiles []string
 }
 
-// 创建一个模拟的Maven结构用于测试
 func createMockMaven() mockMaven {
 	return mockMaven{
-		Version:  "3.9.11",
-		BinFiles: []string{"mvn", "mvnDebug"},
-		LibFiles: []string{"maven-core.jar", "maven-model.jar"},
-		ConfFiles: []string{
-			"settings.xml",
-			"logging/simplelogger.properties",
-		},
+		Version:   "3.9.11",
+		BinFiles:  []string{"mvn", "mvnDebug"},
+		LibFiles:  []string{"maven-core.jar", "maven-model.jar"},
+		ConfFiles: []string{"settings.xml", "logging/simplelogger.properties"},
 	}
 }
 
-// 创建一个测试用的Maven tar.gz文件
+// createMockMavenTarGz writes a fake apache-maven-<version> tar.gz to outputPath.
 func createMockMavenTarGz(t *testing.T, outputPath string) error {
+	t.Helper()
 	mock := createMockMaven()
+	return writeMockTarGz(outputPath, mock)
+}
 
-	// 创建目录结构
-	baseName := "apache-maven-" + mock.Version
-
-	// 创建缓冲区用于写入tar.gz文件
+// writeMockTarGz builds a tar.gz archive matching the Maven layout for the given mock.
+func writeMockTarGz(outputPath string, mock mockMaven) error {
 	var buf bytes.Buffer
 	gzWriter := gzip.NewWriter(&buf)
 	tarWriter := tar.NewWriter(gzWriter)
 
-	// 添加根目录
-	header := &tar.Header{
-		Name:     baseName + "/",
-		Mode:     0755,
-		Typeflag: tar.TypeDir,
-	}
-	if err := tarWriter.WriteHeader(header); err != nil {
-		return err
-	}
+	baseName := "apache-maven-" + mock.Version
 
-	// 添加bin目录
-	header = &tar.Header{
-		Name:     baseName + "/bin/",
-		Mode:     0755,
-		Typeflag: tar.TypeDir,
-	}
-	if err := tarWriter.WriteHeader(header); err != nil {
-		return err
-	}
-
-	// 添加bin下的可执行文件
-	for _, file := range mock.BinFiles {
-		content := []byte("#!/bin/sh\necho This is a mock Maven binary")
-		header = &tar.Header{
-			Name:     baseName + "/bin/" + file,
+	// Helper to add a directory entry.
+	addDir := func(name string) error {
+		return tarWriter.WriteHeader(&tar.Header{
+			Name:     name,
 			Mode:     0755,
+			Typeflag: tar.TypeDir,
+		})
+	}
+	// Helper to add a regular file.
+	addFile := func(name string, content []byte, mode int64) error {
+		if err := tarWriter.WriteHeader(&tar.Header{
+			Name:     name,
+			Mode:     mode,
 			Size:     int64(len(content)),
 			Typeflag: tar.TypeReg,
-		}
-		if err := tarWriter.WriteHeader(header); err != nil {
+		}); err != nil {
 			return err
 		}
-		if _, err := tarWriter.Write(content); err != nil {
-			return err
-		}
-	}
-
-	// 添加lib目录
-	header = &tar.Header{
-		Name:     baseName + "/lib/",
-		Mode:     0755,
-		Typeflag: tar.TypeDir,
-	}
-	if err := tarWriter.WriteHeader(header); err != nil {
+		_, err := tarWriter.Write(content)
 		return err
 	}
 
-	// 添加lib下的jar文件
-	for _, file := range mock.LibFiles {
-		content := []byte("Mock jar file content")
-		header = &tar.Header{
-			Name:     baseName + "/lib/" + file,
-			Mode:     0644,
-			Size:     int64(len(content)),
-			Typeflag: tar.TypeReg,
-		}
-		if err := tarWriter.WriteHeader(header); err != nil {
-			return err
-		}
-		if _, err := tarWriter.Write(content); err != nil {
-			return err
-		}
-	}
-
-	// 添加conf目录
-	header = &tar.Header{
-		Name:     baseName + "/conf/",
-		Mode:     0755,
-		Typeflag: tar.TypeDir,
-	}
-	if err := tarWriter.WriteHeader(header); err != nil {
+	if err := addDir(baseName + "/"); err != nil {
 		return err
 	}
-
-	// 添加conf文件
-	for _, file := range mock.ConfFiles {
-		dir := filepath.Dir(file)
+	if err := addDir(baseName + "/bin/"); err != nil {
+		return err
+	}
+	for _, f := range mock.BinFiles {
+		if err := addFile(baseName+"/bin/"+f, []byte("#!/bin/sh\necho mock maven"), 0755); err != nil {
+			return err
+		}
+	}
+	if err := addDir(baseName + "/lib/"); err != nil {
+		return err
+	}
+	for _, f := range mock.LibFiles {
+		if err := addFile(baseName+"/lib/"+f, []byte("mock jar"), 0644); err != nil {
+			return err
+		}
+	}
+	if err := addDir(baseName + "/conf/"); err != nil {
+		return err
+	}
+	for _, f := range mock.ConfFiles {
+		dir := filepath.Dir(f)
 		if dir != "." {
-			// 为嵌套目录创建目录条目
-			header = &tar.Header{
-				Name:     baseName + "/conf/" + dir + "/",
-				Mode:     0755,
-				Typeflag: tar.TypeDir,
-			}
-			if err := tarWriter.WriteHeader(header); err != nil {
+			if err := addDir(baseName + "/conf/" + dir + "/"); err != nil {
 				return err
 			}
 		}
-
-		content := []byte("# Mock configuration file\n")
-		header = &tar.Header{
-			Name:     baseName + "/conf/" + file,
-			Mode:     0644,
-			Size:     int64(len(content)),
-			Typeflag: tar.TypeReg,
-		}
-		if err := tarWriter.WriteHeader(header); err != nil {
-			return err
-		}
-		if _, err := tarWriter.Write(content); err != nil {
+		if err := addFile(baseName+"/conf/"+f, []byte("# mock config\n"), 0644); err != nil {
 			return err
 		}
 	}
 
-	// 关闭writer
 	if err := tarWriter.Close(); err != nil {
 		return err
 	}
 	if err := gzWriter.Close(); err != nil {
 		return err
 	}
-
-	// 写入文件
 	return os.WriteFile(outputPath, buf.Bytes(), 0644)
 }
 
-// 创建测试用的模拟HTTP服务器，提供Maven下载
-func createMockMavenServer(t *testing.T) (*httptest.Server, string) {
-	mux := http.NewServeMux()
+// writeMockZip builds a zip archive matching the Maven layout.
+func writeMockZip(outputPath string, mock mockMaven) error {
+	buf := new(bytes.Buffer)
+	zw := zip.NewWriter(buf)
+	baseName := "apache-maven-" + mock.Version
 
-	// 创建临时目录用于存储模拟文件
+	addDir := func(name string) error {
+		w, err := zw.Create(name)
+		if err != nil {
+			return err
+		}
+		_, err = w.Write(nil)
+		return err
+	}
+	addFile := func(name, content string) error {
+		w, err := zw.Create(name)
+		if err != nil {
+			return err
+		}
+		_, err = w.Write([]byte(content))
+		return err
+	}
+
+	if err := addDir(baseName + "/"); err != nil {
+		return err
+	}
+	if err := addDir(baseName + "/bin/"); err != nil {
+		return err
+	}
+	for _, f := range mock.BinFiles {
+		if err := addFile(baseName+"/bin/"+f, "#!/bin/sh\necho mock maven"); err != nil {
+			return err
+		}
+	}
+	if err := addDir(baseName + "/lib/"); err != nil {
+		return err
+	}
+	for _, f := range mock.LibFiles {
+		if err := addFile(baseName+"/lib/"+f, "mock jar"); err != nil {
+			return err
+		}
+	}
+	if err := addDir(baseName + "/conf/"); err != nil {
+		return err
+	}
+	for _, f := range mock.ConfFiles {
+		if err := addFile(baseName+"/conf/"+f, "# mock config\n"); err != nil {
+			return err
+		}
+	}
+	if err := zw.Close(); err != nil {
+		return err
+	}
+	return os.WriteFile(outputPath, buf.Bytes(), 0644)
+}
+
+// mockServerBuilder configures a test HTTP server hosting a Maven archive.
+type mockServerBuilder struct {
+	version      string
+	archiveExt   string // "tar.gz" or "zip"
+	serveArchive bool   // if false, the archive endpoint returns 500
+	serveSHA512  bool   // if false, the .sha512 endpoint returns 500
+	mock         mockMaven
+}
+
+// newMockServer builds an httptest.Server that serves the archive and/or its
+// SHA512 checksum under the standard Apache URL layout.
+func newMockServer(t *testing.T, b mockServerBuilder) (*httptest.Server, string) {
+	t.Helper()
+	if b.version == "" {
+		b.version = "3.9.11"
+	}
+	if b.archiveExt == "" {
+		b.archiveExt = "tar.gz"
+	}
+	if b.mock.Version == "" {
+		b.mock = createMockMaven()
+		b.mock.Version = b.version
+	}
+
 	tempDir, err := os.MkdirTemp("", "maven-mock")
 	if err != nil {
-		t.Fatalf("创建临时目录失败: %v", err)
+		t.Fatalf("create temp dir: %v", err)
 	}
 
-	// 创建模拟的Maven tar.gz文件
-	mockTarPath := filepath.Join(tempDir, "apache-maven-3.9.11-bin.tar.gz")
-	if err := createMockMavenTarGz(t, mockTarPath); err != nil {
-		t.Fatalf("创建模拟Maven包失败: %v", err)
+	archiveName := fmt.Sprintf("apache-maven-%s-bin.%s", b.version, b.archiveExt)
+	archivePath := filepath.Join(tempDir, archiveName)
+	switch b.archiveExt {
+	case "tar.gz":
+		if err := writeMockTarGz(archivePath, b.mock); err != nil {
+			t.Fatalf("write mock tar.gz: %v", err)
+		}
+	case "zip":
+		if err := writeMockZip(archivePath, b.mock); err != nil {
+			t.Fatalf("write mock zip: %v", err)
+		}
 	}
 
-	// 处理Maven下载请求
-	mux.HandleFunc("/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz", func(w http.ResponseWriter, r *http.Request) {
-		data, err := os.ReadFile(mockTarPath)
-		if err != nil {
-			http.Error(w, "读取文件失败", http.StatusInternalServerError)
+	archiveData, err := os.ReadFile(archivePath)
+	if err != nil {
+		t.Fatalf("read archive: %v", err)
+	}
+	sum := sha512.Sum512(archiveData)
+	checksum := hex.EncodeToString(sum[:])
+
+	mux := http.NewServeMux()
+	archivePathHandler := fmt.Sprintf("/maven/maven-3/%s/binaries/%s", b.version, archiveName)
+	checksumPath := archivePathHandler + ".sha512"
+
+	mux.HandleFunc(archivePathHandler, func(w http.ResponseWriter, r *http.Request) {
+		if !b.serveArchive {
+			http.Error(w, "archive disabled", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/octet-stream")
-		w.Header().Set("Content-Disposition", "attachment; filename=apache-maven-3.9.11-bin.tar.gz")
-		w.Write(data)
+		w.Write(archiveData)
+	})
+	mux.HandleFunc(checksumPath, func(w http.ResponseWriter, r *http.Request) {
+		if !b.serveSHA512 {
+			http.Error(w, "checksum disabled", http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprint(w, checksum)
 	})
 
 	server := httptest.NewServer(mux)
 	return server, tempDir
 }
 
-// 使用模拟服务器和可测试版本的函数进行测试
+// TestInstallMacOSWithMock verifies the binary-install path end-to-end using a
+// mock server: download → SHA512 verify → extract → locate mvn.
 func TestInstallMacOSWithMock(t *testing.T) {
-	// 创建模拟HTTP服务器
-	server, tempDir := createMockMavenServer(t)
+	server, tempDir := newMockServer(t, mockServerBuilder{serveArchive: true, serveSHA512: true})
 	defer os.RemoveAll(tempDir)
 	defer server.Close()
 
-	// 设置模拟URL
-	mockURL := server.URL + "/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.tar.gz"
-
-	// 创建测试目录
 	testHomeDir, err := os.MkdirTemp("", "maven-test-home")
 	if err != nil {
-		t.Fatalf("创建测试主目录失败: %v", err)
+		t.Fatalf("create test home: %v", err)
 	}
 	defer os.RemoveAll(testHomeDir)
 
-	// 设置测试选项
 	options := InstallOptions{
-		MavenURL:     mockURL,
+		Version:      "3.9.11",
+		Mirrors:      []string{server.URL},
 		HomeDir:      testHomeDir,
-		SkipEnvSetup: true, // 跳过环境变量设置
+		SkipEnvSetup: true,
+		MaxRetries:   1,
 	}
 
-	// 使用可测试版本的函数
 	mavenHome, err := InstallMacOSWithOptions(options)
 	if err != nil {
-		t.Fatalf("使用模拟服务器安装Maven失败: %v", err)
+		t.Fatalf("install failed: %v", err)
 	}
-
-	// 验证安装结果
 	if mavenHome == "" {
-		t.Fatal("返回的Maven安装路径为空")
+		t.Fatal("empty maven home")
 	}
 
-	// 验证bin/mvn可执行文件存在
 	mvnPath := filepath.Join(mavenHome, "bin", "mvn")
-	_, err = os.Stat(mvnPath)
-	if err != nil {
-		t.Fatalf("未找到mvn可执行文件: %v", err)
+	if _, err := os.Stat(mvnPath); err != nil {
+		t.Fatalf("mvn not found: %v", err)
 	}
-
-	t.Logf("Maven成功安装到测试目录: %s", mavenHome)
+	t.Logf("Maven installed to: %s", mavenHome)
 }
