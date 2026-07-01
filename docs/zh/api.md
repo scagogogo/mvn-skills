@@ -1,6 +1,22 @@
 # API 参考
 
-本文档提供了 Maven SDK Go 的详细 API 参考。
+本文档提供了 Maven SDK Go 的详细 API 参考。如果想了解全局视角——各模块如何
+交互、一次构建请求如何在系统中流转——请参阅[架构设计](/zh/architecture)。
+
+## 模块地图
+
+```mermaid
+flowchart LR
+    finder["finder<br/>定位 mvn"] --> command["command<br/>执行 mvn"]
+    command --> pom["pom<br/>解析 pom.xml"]
+    command --> settings["settings<br/>解析 settings.xml"]
+    command --> repo["local_repository<br/>~/.m2 布局"]
+    installer["installer<br/>安装 mvn"] --> finder
+
+    click finder "#finder" "跳转到 Finder"
+    click command "#command" "跳转到 Command"
+    click installer "#installer" "跳转到 Installer"
+```
 
 ## 包概览
 
@@ -28,6 +44,25 @@ func HasMavenWrapper(projectDir string) bool
 
 var ErrNotFoundMaven error
 var ErrNotFoundMavenWrapper error
+```
+
+`FindBestMaven` 使用的**解析顺序**——优先项目 Wrapper，因为它锁定了项目
+期望的确切 Maven 版本：
+
+```mermaid
+flowchart TD
+    A(["FindBestMaven(projectDir)"]) --> B{"存在 mvnw?"}
+    B -->|有| W["使用 ./mvnw"]
+    B -->|无| C{"PATH 中有 mvn?"}
+    C -->|有| P["使用 PATH 中的 mvn"]
+    C -->|无| D{"M2_HOME / MAVEN_HOME 有效?"}
+    D -->|是| H["使用 $M2_HOME/bin/mvn"]
+    D -->|否| E(["ErrNotFoundMaven"])
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+    class W,P,H ok;
+    class E bad;
 ```
 
 ### Command
@@ -95,6 +130,23 @@ output, err := NewCommandBuilder().
 
 #### 错误处理
 
+每次失败都会以类型化的 `*MavenError` 暴露，携带退出码、完整 argv 和 Maven 的
+stderr——调用方可以据此按退出码分支处理，而不必去 grep 字符串。
+
+```mermaid
+flowchart LR
+    Run["command.Clean(mvn)"] --> Exit{"退出码"}
+    Exit -->|0| Ok["返回 stdout, nil"]
+    Exit -->|非零| Err["返回 *MavenError"]
+    Err --> Fields["ExitCode · Args · Stderr · Inner"]
+    Fields --> AsErr["errors.As(err, &amp;me)"]
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+    class Ok ok;
+    class Err bad;
+```
+
 ```go
 // MavenError 表示 Maven 命令执行失败
 type MavenError struct {
@@ -133,6 +185,16 @@ func BuildExecutable(mavenHomeDirectory string) string
 ```
 
 #### 生命周期阶段
+
+调用某个阶段会执行**它以及同一生命周期中它之前的所有阶段**。下面这些函数是
+对 `mvn <phase>` 的轻量封装。
+
+```mermaid
+flowchart LR
+    validate --> initialize --> compile --> test --> package --> verify --> install --> deploy
+    classDef hl fill:#e8f0fe,stroke:#2563eb,color:#1e3a8a;
+    class package,install hl;
+```
 
 ```go
 // 常用阶段
@@ -242,7 +304,27 @@ func Wrapper(executable string) (string, error)
 
 ### POM 解析器
 
-POM 包解析 Maven pom.xml 文件为类型化的 Go 结构体。
+POM 包解析 Maven pom.xml 文件为类型化的 Go 结构体。三个入口最终汇入同一个
+XML 解码器，因此无论你从路径、reader 还是字节切片开始，行为都完全一致。
+
+```mermaid
+flowchart LR
+    subgraph inputs["入口"]
+        F["ParseFile(path)"]
+        R["ParseReader(io.Reader)"]
+        B["ParseBytes([]byte)"]
+    end
+    F --> Dec["encoding/xml 解码"]
+    R --> Dec
+    B --> Dec
+    Dec --> Proj["*Project"]
+    Proj --> Acc["GetGAV · GetDependencies<br/>GetModules · GetPlugins · ..."]
+
+    classDef entry fill:#e8f0fe,stroke:#2563eb,color:#1e3a8a;
+    class F,R,B entry;
+```
+
+完整的 `Project` 对象模型类图见[架构设计](/zh/architecture#pom-对象模型)。
 
 ```go
 package pom
@@ -276,7 +358,20 @@ func (p *Project) FindPlugin(groupId, artifactId string) *Plugin
 
 ### Settings 解析器
 
-Settings 包解析 Maven settings.xml 文件。
+Settings 包解析 Maven settings.xml 文件。`FindMirrorOf` 实现了 Maven 的镜像
+匹配规则，包括 `*` 和 `external:*` 通配符。
+
+```mermaid
+flowchart TD
+    Q(["FindMirrorOf(repoId)"]) --> Loop{"遍历每个 &lt;mirror&gt;"}
+    Loop --> Match{"mirrorOf 匹配?<br/>id · * · external:*"}
+    Match -->|是| Ret["返回该 Mirror"]
+    Match -->|否| Loop
+    Loop -->|遍历结束| Nil["返回 nil<br/>（使用原始仓库）"]
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    class Ret ok;
+```
 
 ```go
 package settings
@@ -322,14 +417,55 @@ func FindJarWithClassifier(repoDir, groupId, artifactId, version, classifier str
 
 ### Installer
 
+`Install()` 会自动检测平台并挑选成本最低的可行方案；`InstallWithOptions`
+则暴露版本锁定、自定义镜像、校验和控制与幂等性覆盖等选项。完整流程、镜像
+回退时序以及各操作系统的环境处理见[架构设计](/zh/architecture#安装器-端到端流程)。
+
+```mermaid
+flowchart TD
+    Install(["Install()"]) --> OS{"runtime.GOOS"}
+    OS -->|linux| L["包管理器<br/>(apt/dnf/yum/apk/pacman/zypper)"]
+    OS -->|darwin| M["Homebrew"]
+    OS -->|windows| W["二进制 .zip"]
+    L -->|未找到| Bin["二进制 .tar.gz<br/>镜像 + SHA512 + 解压"]
+    M -->|未找到| Bin
+    W --> Env["配置 MAVEN_HOME + PATH"]
+    Bin --> Env
+    L --> Env
+    M --> Env
+    Env --> Ret(["MAVEN_HOME"])
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    class Ret ok;
+```
+
 ```go
 package installer
 
-func Install() (string, error)              // 自动检测平台
-func InstallLinux() (string, error)         // apt-get/yum 或二进制包
+// 高层入口
+func Install() (string, error)              // 自动检测平台，幂等
+func InstallLinux() (string, error)         // apt/dnf/yum/apk/pacman/zypper 或二进制包
 func InstallMacOS() (string, error)         // Homebrew 或二进制包
-func InstallWindows() (string, error)       // zip + 环境变量
-func InstallMacOSWithOptions(opts InstallOptions) (string, error)
+func InstallWindows() (string, error)       // zip + 安全的 PATH/MAVEN_HOME 配置
+
+// 可配置入口
+func InstallWithOptions(opts InstallOptions) (string, error)
+func DefaultInstallOptions() InstallOptions
+func InstallMacOSWithOptions(opts InstallOptions) (string, error) // 旧别名
+
+// 选项
+type InstallOptions struct {
+    Version      string   // "" → DefaultMavenVersion
+    Mirrors      []string // "" → DefaultMirrors（Apache + 阿里云 + 清华）
+    HomeDir      string   // 安装目标目录（默认按操作系统区分）
+    SkipEnvSetup bool     // 不修改 PATH / shell 配置
+    SkipChecksum bool     // 跳过 SHA512 校验（不推荐）
+    Force        bool     // 即使已存在可用 Maven 也强制重装
+    MaxRetries   int      // 每个镜像的下载重试次数（默认 3）
+}
+
+const DefaultMavenVersion = "3.9.11"
+var DefaultMirrors []string
 ```
 
 ## 使用示例

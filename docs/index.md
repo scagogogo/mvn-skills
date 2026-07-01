@@ -2,6 +2,18 @@
 
 A Go SDK for Maven operations.
 
+## Architecture at a Glance
+
+```mermaid
+flowchart LR
+    App["Your Go App / AI Agent"] --> Finder["finder"]
+    App --> Command["command"]
+    App --> Pom["pom"]
+    Finder --> Command
+    Command --> Maven["mvn CLI"]
+    Installer["installer"] --> Maven
+```
+
 ## Features
 
 - 🔍 **Finder**: Find JAR files in Maven local repository
@@ -39,6 +51,7 @@ func main() {
 
 ## Documentation
 
+- [Architecture](/architecture) - How the packages fit together, with flow diagrams
 - [API Reference](/api) - Detailed API documentation
 - [Examples](https://github.com/scagogogo/mvn-skills/tree/main/examples) - Code examples
 

@@ -2,6 +2,18 @@
 
 一个用于 Maven 操作的 Go 语言 SDK。
 
+## 架构总览
+
+```mermaid
+flowchart LR
+    App["你的 Go 应用 / AI 智能体"] --> Finder["finder"]
+    App --> Command["command"]
+    App --> Pom["pom"]
+    Finder --> Command
+    Command --> Maven["mvn 命令行"]
+    Installer["installer"] --> Maven
+```
+
 ## 特性
 
 - 🔍 **Finder**: 查找 Maven 本地仓库中的 JAR 文件
@@ -39,7 +51,8 @@ func main() {
 
 ## 文档
 
-- [API 参考](/api) - 详细的 API 文档
+- [架构设计](/zh/architecture) - 各模块如何协作，配以流程图
+- [API 参考](/zh/api) - 详细的 API 文档
 - [示例](https://github.com/scagogogo/mvn-skills/tree/main/examples) - 代码示例
 
 ## 许可证

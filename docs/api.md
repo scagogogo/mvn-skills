@@ -1,6 +1,26 @@
 # API Reference
 
-This document provides detailed API reference for Maven SDK Go.
+This document provides detailed API reference for Maven SDK Go. For the bigger
+picture — how these packages interact and how a build request flows through the
+system — see the [Architecture](/architecture) guide.
+
+## Package Map
+
+```mermaid
+flowchart LR
+    finder["finder<br/>locate mvn"] --> command["command<br/>run mvn"]
+    command --> pom["pom<br/>parse pom.xml"]
+    command --> settings["settings<br/>parse settings.xml"]
+    command --> repo["local_repository<br/>~/.m2 layout"]
+    installer["installer<br/>install mvn"] --> finder
+
+    click finder "#finder" "Jump to Finder"
+    click command "#command" "Jump to Command"
+    click pom "#pom-parser" "Jump to POM Parser"
+    click settings "#settings-parser" "Jump to Settings Parser"
+    click repo "#local-repository" "Jump to Local Repository"
+    click installer "#installer" "Jump to Installer"
+```
 
 ## Package Overview
 
@@ -28,6 +48,25 @@ func HasMavenWrapper(projectDir string) bool
 
 var ErrNotFoundMaven error
 var ErrNotFoundMavenWrapper error
+```
+
+**Resolution order** used by `FindBestMaven` — the project wrapper is preferred
+because it pins the exact Maven version the project expects:
+
+```mermaid
+flowchart TD
+    A(["FindBestMaven(projectDir)"]) --> B{"mvnw present?"}
+    B -->|yes| W["use ./mvnw"]
+    B -->|no| C{"mvn on PATH?"}
+    C -->|yes| P["use PATH mvn"]
+    C -->|no| D{"M2_HOME / MAVEN_HOME valid?"}
+    D -->|yes| H["use $M2_HOME/bin/mvn"]
+    D -->|no| E(["ErrNotFoundMaven"])
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+    class W,P,H ok;
+    class E bad;
 ```
 
 ### Command
@@ -95,6 +134,24 @@ output, err := NewCommandBuilder().
 
 #### Error Handling
 
+Every failure surfaces as a typed `*MavenError` carrying the exit code, the full
+argv, and Maven's stderr — so callers can branch on the exit code instead of
+grepping strings.
+
+```mermaid
+flowchart LR
+    Run["command.Clean(mvn)"] --> Exit{"exit code"}
+    Exit -->|0| Ok["return stdout, nil"]
+    Exit -->|non-zero| Err["return *MavenError"]
+    Err --> Fields["ExitCode · Args · Stderr · Inner"]
+    Fields --> AsErr["errors.As(err, &amp;me)"]
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef bad fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+    class Ok ok;
+    class Err bad;
+```
+
 ```go
 // MavenError represents a failed Maven command execution
 type MavenError struct {
@@ -139,6 +196,16 @@ func BuildExecutable(mavenHomeDirectory string) string
 ```
 
 #### Lifecycle Phases
+
+Invoking a phase runs it **and every earlier phase** in the same lifecycle. The
+functions below are thin wrappers over `mvn <phase>`.
+
+```mermaid
+flowchart LR
+    validate --> initialize --> compile --> test --> package --> verify --> install --> deploy
+    classDef hl fill:#e8f0fe,stroke:#2563eb,color:#1e3a8a;
+    class package,install hl;
+```
 
 ```go
 // Standard phases
@@ -259,7 +326,29 @@ func Wrapper(executable string) (string, error)               // mvn wrapper:wra
 
 ### POM Parser
 
-The POM package parses Maven `pom.xml` files into typed Go structs.
+The POM package parses Maven `pom.xml` files into typed Go structs. All three
+entry points funnel into the same XML decoder, so behaviour is identical whether
+you start from a path, a reader, or a byte slice.
+
+```mermaid
+flowchart LR
+    subgraph inputs["Entry points"]
+        F["ParseFile(path)"]
+        R["ParseReader(io.Reader)"]
+        B["ParseBytes([]byte)"]
+    end
+    F --> Dec["encoding/xml decode"]
+    R --> Dec
+    B --> Dec
+    Dec --> Proj["*Project"]
+    Proj --> Acc["GetGAV · GetDependencies<br/>GetModules · GetPlugins · ..."]
+
+    classDef entry fill:#e8f0fe,stroke:#2563eb,color:#1e3a8a;
+    class F,R,B entry;
+```
+
+See the [Architecture guide](/architecture#pom-object-model) for the full
+`Project` object model as a class diagram.
 
 ```go
 package pom
@@ -292,7 +381,20 @@ func (p *Project) FindPlugin(groupId, artifactId string) *Plugin
 
 ### Settings Parser
 
-The Settings package parses Maven `settings.xml` files.
+The Settings package parses Maven `settings.xml` files. `FindMirrorOf` implements
+Maven's mirror-matching rules, including the `*` and `external:*` wildcards.
+
+```mermaid
+flowchart TD
+    Q(["FindMirrorOf(repoId)"]) --> Loop{"for each &lt;mirror&gt;"}
+    Loop --> Match{"mirrorOf matches?<br/>id · * · external:*"}
+    Match -->|yes| Ret["return that Mirror"]
+    Match -->|no| Loop
+    Loop -->|exhausted| Nil["return nil<br/>(use original repo)"]
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    class Ret ok;
+```
 
 ```go
 package settings
@@ -340,14 +442,56 @@ func FindJarWithClassifier(repoDir, groupId, artifactId, version, classifier str
 
 ### Installer
 
+`Install()` auto-detects the platform and picks the cheapest viable strategy;
+`InstallWithOptions` exposes version pinning, custom mirrors, checksum control,
+and idempotency overrides. See the [Architecture guide](/architecture#installer-end-to-end-flow)
+for the complete flow, mirror-fallback sequence, and per-OS environment handling.
+
+```mermaid
+flowchart TD
+    Install(["Install()"]) --> OS{"runtime.GOOS"}
+    OS -->|linux| L["package manager<br/>(apt/dnf/yum/apk/pacman/zypper)"]
+    OS -->|darwin| M["Homebrew"]
+    OS -->|windows| W["binary .zip"]
+    L -->|not found| Bin["binary .tar.gz<br/>mirror + SHA512 + extract"]
+    M -->|not found| Bin
+    W --> Env["configure MAVEN_HOME + PATH"]
+    Bin --> Env
+    L --> Env
+    M --> Env
+    Env --> Ret(["MAVEN_HOME"])
+
+    classDef ok fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    class Ret ok;
+```
+
 ```go
 package installer
 
-func Install() (string, error)              // Auto-detect platform
-func InstallLinux() (string, error)         // apt-get/yum or binary
+// High-level entry points
+func Install() (string, error)              // Auto-detect platform, idempotent
+func InstallLinux() (string, error)         // apt/dnf/yum/apk/pacman/zypper or binary
 func InstallMacOS() (string, error)         // Homebrew or binary
-func InstallWindows() (string, error)       // zip + env vars
-func InstallMacOSWithOptions(opts InstallOptions) (string, error)
+func InstallWindows() (string, error)       // zip + safe PATH/MAVEN_HOME setup
+
+// Configurable entry point
+func InstallWithOptions(opts InstallOptions) (string, error)
+func DefaultInstallOptions() InstallOptions
+func InstallMacOSWithOptions(opts InstallOptions) (string, error) // legacy alias
+
+// Options
+type InstallOptions struct {
+    Version      string   // "" → DefaultMavenVersion
+    Mirrors      []string // "" → DefaultMirrors (Apache + Aliyun + Tsinghua)
+    HomeDir      string   // install target (default: OS-specific)
+    SkipEnvSetup bool     // don't touch PATH / shell rc
+    SkipChecksum bool     // skip SHA512 verification (not recommended)
+    Force        bool     // reinstall even if a usable Maven exists
+    MaxRetries   int      // per-mirror download retries (default 3)
+}
+
+const DefaultMavenVersion = "3.9.11"
+var DefaultMirrors []string
 ```
 
 ## Usage Examples
